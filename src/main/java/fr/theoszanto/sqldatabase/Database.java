@@ -19,47 +19,70 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.logging.Level;
+import java.util.logging.Logger;
 
 public class Database {
-	private final File folder;
-	private Connection connection;
+	private final @NotNull File folder;
+	private @Nullable Connection connection;
+	private @Nullable Level logLevel = null;
 
 	public static final char BIND_RECURSION_SEPARATOR = '_';
 	private static final @NotNull Map<@NotNull Class<?>, @NotNull String> SQL_GET_REQUESTS_CACHE = new HashMap<>();
 	private static final @NotNull Map<@NotNull Class<?>, @NotNull String> SQL_LIST_REQUESTS_CACHE = new HashMap<>();
 	private static final @NotNull Map<@NotNull Class<?>, @NotNull String> SQL_SET_REQUESTS_CACHE = new HashMap<>();
 	private static final @NotNull Map<@NotNull Class<?>, @NotNull String> SQL_DELETE_REQUESTS_CACHE = new HashMap<>();
+	private static final @NotNull Logger LOGGER = Logger.getLogger(Database.class.getName());
 
 	public Database(@NotNull File folder) {
 		this.folder = folder;
 	}
 
-	@SuppressWarnings("ResultOfMethodCallIgnored")
 	public void initialize(@NotNull String file) {
-		File data = new File(this.folder, file);
-		if (!data.exists()) {
-			try {
-				data.getParentFile().mkdirs();
-				data.createNewFile();
-			} catch (IOException e) {
-				e.printStackTrace();
-				return;
-			}
-		}
 		try {
+			LOGGER.info("Connecting to database...");
+			LOGGER.config("Root directory: " + this.folder);
+			LOGGER.config("Database file: " + file);
+			File data = new File(this.folder, file);
+			if (!data.exists()) {
+				File parent = data.getParentFile();
+				if (parent.mkdirs())
+					LOGGER.info("Created \"" + parent + "\" directory.");
+				else
+					throw new IOException("Unable to create the database directory \"" + parent + "\".");
+				if (data.createNewFile())
+					LOGGER.info("Created \"" + data + "\" file.");
+				else
+					throw new IOException("Unable to create the database file \"" + parent + "\".");
+			}
 			if (this.connection != null && !this.connection.isClosed())
 				this.connection.close();
 			this.connection = DriverManager.getConnection("jdbc:sqlite:" + data);
-		} catch (SQLException e) {
-			e.printStackTrace();
+			LOGGER.info("Connected to database!");
+		} catch (SQLException | IOException e) {
+			LOGGER.log(Level.SEVERE, "Unable to connect to database.", e);
+			throw new DatabaseException("A fatal error occured while connecting to database.", e);
 		}
 	}
 
-	private @NotNull PreparedStatement prepare(@NotNull String sql, @Nullable Object @NotNull... params) {
+	public void setLogLevel(@Nullable Level logLevel) {
+		this.logLevel = logLevel;
+	}
+
+	public @Nullable Level getLogLevel() {
+		return this.logLevel;
+	}
+
+	private @NotNull PreparedStatement prepare(@NotNull String sql, @Nullable Object @NotNull... params) throws DatabaseException {
+		if (this.connection == null)
+			throw new DatabaseException("Database connection not initialized");
 		try {
-			System.out.println(sql);
-			for (Object param : params)
-				System.out.println(param);
+			if (this.logLevel != null) {
+				LOGGER.log(this.logLevel, "SQL request: " + sql);
+				LOGGER.log(this.logLevel, "Request params: (" + params.length + ")");
+				for (Object param : params)
+					LOGGER.log(this.logLevel, "\t" + param);
+			}
 			PreparedStatement statement = this.connection.prepareStatement(sql);
 			for (int i = 0; i < params.length; i++)
 				statement.setObject(i + 1, params[i]);
@@ -69,7 +92,7 @@ public class Database {
 		}
 	}
 
-	public void execute(@NotNull String sql, @Nullable Object @NotNull... params) {
+	public void execute(@NotNull String sql, @Nullable Object @NotNull... params) throws DatabaseException {
 		try {
 			PreparedStatement statement = this.prepare(sql, params);
 			statement.execute();
@@ -79,11 +102,11 @@ public class Database {
 		}
 	}
 
-	public <T> @Nullable T get(@NotNull Class<T> type, @NotNull Object @NotNull... id) {
+	public <T> @Nullable T get(@NotNull Class<T> type, @NotNull Object @NotNull... id) throws DatabaseException {
 		return this.getSql(type, SQL_GET_REQUESTS_CACHE.computeIfAbsent(type, Database::buildSqlGetQuery), id);
 	}
 
-	public <T> @Nullable T getSql(@NotNull Class<T> type, @NotNull String sql, @Nullable Object @NotNull... params) {
+	public <T> @Nullable T getSql(@NotNull Class<T> type, @NotNull String sql, @Nullable Object @NotNull... params) throws DatabaseException {
 		try {
 			PreparedStatement statement = this.prepare(sql, params);
 			ResultSet result = statement.executeQuery();
@@ -95,11 +118,11 @@ public class Database {
 		}
 	}
 
-	public <T> @NotNull List<@NotNull T> list(@NotNull Class<T> type) {
+	public <T> @NotNull List<@NotNull T> list(@NotNull Class<T> type) throws DatabaseException {
 		return this.listSql(type, SQL_LIST_REQUESTS_CACHE.computeIfAbsent(type, Database::buildSqlListQuery));
 	}
 
-	public <T> @NotNull List<@NotNull T> listSql(@NotNull Class<T> type, @NotNull String sql, @Nullable Object @NotNull... params) {
+	public <T> @NotNull List<@NotNull T> listSql(@NotNull Class<T> type, @NotNull String sql, @Nullable Object @NotNull... params) throws DatabaseException {
 		try {
 			PreparedStatement statement = this.prepare(sql, params);
 			ResultSet result = statement.executeQuery();
@@ -113,7 +136,7 @@ public class Database {
 		}
 	}
 
-	public void set(@NotNull Object value) {
+	public void set(@NotNull Object value) throws DatabaseException {
 		try {
 			this.execute(SQL_SET_REQUESTS_CACHE.computeIfAbsent(value.getClass(), Database::buildSqlSetQuery), explode(value));
 		} catch (ReflectiveOperationException e) {
@@ -133,11 +156,11 @@ public class Database {
 		return params;
 	}
 
-	private <T> @NotNull T bind(@NotNull Class<T> type, @NotNull ResultSet result) {
+	private <T> @NotNull T bind(@NotNull Class<T> type, @NotNull ResultSet result) throws DatabaseException {
 		return this.bind(type, result, "");
 	}
 
-	private <T> @NotNull T bind(@NotNull Class<T> type, @NotNull ResultSet result, @NotNull String prefix) {
+	private <T> @NotNull T bind(@NotNull Class<T> type, @NotNull ResultSet result, @NotNull String prefix) throws DatabaseException {
 		try {
 			T object = type.getConstructor().newInstance();
 			TableEntity table = EntitiesFactory.table(type);

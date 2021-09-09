@@ -1,4 +1,4 @@
-package fr.theoszanto.sqldatabase;
+package fr.theoszanto.sqldatabase.annotations;
 
 import java.lang.annotation.Documented;
 import java.lang.annotation.ElementType;

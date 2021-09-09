@@ -4,6 +4,7 @@ import fr.theoszanto.sqldatabase.sqlbuilders.SQLConditionBuilder;
 import fr.theoszanto.sqldatabase.sqlbuilders.SQLValue;
 import fr.theoszanto.sqldatabase.utils.CollectionsUtils;
 import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 
 import java.util.Iterator;
 import java.util.List;
@@ -31,10 +32,10 @@ public class PrimaryKeyEntity implements Iterable<@NotNull ColumnEntity> {
 		return this.columns.values().iterator();
 	}
 
-	public @NotNull SQLConditionBuilder condition() {
+	public @Nullable SQLConditionBuilder condition() {
 		Iterator<ColumnEntity> i = this.iterator();
 		if (!i.hasNext())
-			throw new IllegalStateException("PrimaryKey is empty");
+			return null;
 		SQLConditionBuilder builder = conditionEquals(i);
 		while (i.hasNext())
 			builder.and(conditionEquals(i));

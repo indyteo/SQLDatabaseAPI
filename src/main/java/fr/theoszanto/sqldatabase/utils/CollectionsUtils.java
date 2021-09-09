@@ -65,7 +65,7 @@ public class CollectionsUtils {
 						return e.setValue(value);
 				}
 			}
-			entrySet.add(new Entry<>(key, value));
+			entrySet.add(key, value);
 			return null;
 		}
 
@@ -119,6 +119,15 @@ public class CollectionsUtils {
 		private class EntrySet extends AbstractCollection<Map.Entry<K, V>> implements Set<Map.Entry<K, V>> {
 			private final @NotNull List<@NotNull Entry<K, V>> content = new ArrayList<>();
 
+			private void add(K key, V value) {
+				add(new Entry<>(key, value));
+			}
+
+			@Override
+			public boolean add(Map.Entry<K, V> e) {
+				return content.add((Entry<K, V>) e);
+			}
+
 			@Override
 			public int size() {
 				return content.size();
@@ -135,7 +144,7 @@ public class CollectionsUtils {
 			}
 
 			private class EntryIterator implements Iterator<Map.Entry<K, V>> {
-				private int i = 0;
+				private int i = -1;
 
 				@Override
 				public boolean hasNext() {

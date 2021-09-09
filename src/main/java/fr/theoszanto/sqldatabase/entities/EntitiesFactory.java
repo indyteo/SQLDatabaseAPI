@@ -1,10 +1,12 @@
 package fr.theoszanto.sqldatabase.entities;
 
 import fr.theoszanto.sqldatabase.Database;
-import fr.theoszanto.sqldatabase.DatabaseForeignKey;
-import fr.theoszanto.sqldatabase.DatabaseModelBinding;
-import fr.theoszanto.sqldatabase.DatabasePrimaryKey;
-import fr.theoszanto.sqldatabase.DatabaseTable;
+import fr.theoszanto.sqldatabase.annotations.DatabaseExclude;
+import fr.theoszanto.sqldatabase.annotations.DatabaseField;
+import fr.theoszanto.sqldatabase.annotations.DatabaseForeignKey;
+import fr.theoszanto.sqldatabase.annotations.DatabaseModelBinding;
+import fr.theoszanto.sqldatabase.annotations.DatabasePrimaryKey;
+import fr.theoszanto.sqldatabase.annotations.DatabaseTable;
 import org.jetbrains.annotations.NotNull;
 
 import java.lang.reflect.Field;
@@ -23,7 +25,8 @@ public class EntitiesFactory {
 	private EntitiesFactory() {}
 
 	public static @NotNull ColumnEntity column(@NotNull TableEntity table, @NotNull Field field) {
-		String name = field.getName();
+		DatabaseField fieldDescriptor = field.getAnnotation(DatabaseField.class);
+		String name = fieldDescriptor == null ? field.getName() : fieldDescriptor.value();
 		// Verify if column was already created
 		if (table.getColumns().containsKey(name))
 			return table.getColumns().get(name);
@@ -77,7 +80,7 @@ public class EntitiesFactory {
 
 	private static void forEachFields(@NotNull Class<?> type, @NotNull Consumer<@NotNull Field> action) {
 		for (Field field : type.getDeclaredFields())
-			if ((field.getModifiers() & IGNORED_FIELDS_MODIFIERS) == 0)
+			if (!field.isAnnotationPresent(DatabaseExclude.class) && (field.getModifiers() & IGNORED_FIELDS_MODIFIERS) == 0)
 				action.accept(field);
 		Class<?> superType = type.getSuperclass();
 		if (superType != null && superType != Object.class)

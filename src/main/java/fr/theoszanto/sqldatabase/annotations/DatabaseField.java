@@ -1,4 +1,4 @@
-package fr.theoszanto.sqldatabase;
+package fr.theoszanto.sqldatabase.annotations;
 
 import java.lang.annotation.Documented;
 import java.lang.annotation.ElementType;
@@ -9,6 +9,6 @@ import java.lang.annotation.Target;
 @Documented
 @Retention(RetentionPolicy.RUNTIME)
 @Target(ElementType.FIELD)
-public @interface DatabaseForeignKey {
-	String value() default "";
+public @interface DatabaseField {
+	String value();
 }

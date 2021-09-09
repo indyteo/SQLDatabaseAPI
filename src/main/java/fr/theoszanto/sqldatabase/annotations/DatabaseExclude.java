@@ -1,4 +1,4 @@
-package fr.theoszanto.sqldatabase;
+package fr.theoszanto.sqldatabase.annotations;
 
 import java.lang.annotation.Documented;
 import java.lang.annotation.ElementType;
@@ -8,5 +8,5 @@ import java.lang.annotation.Target;
 
 @Documented
 @Retention(RetentionPolicy.RUNTIME)
-@Target(ElementType.TYPE)
-public @interface DatabaseModelBinding {}
+@Target(ElementType.FIELD)
+public @interface DatabaseExclude {}
