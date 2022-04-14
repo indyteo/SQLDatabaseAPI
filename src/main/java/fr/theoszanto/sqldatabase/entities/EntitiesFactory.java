@@ -1,6 +1,5 @@
 package fr.theoszanto.sqldatabase.entities;
 
-import fr.theoszanto.sqldatabase.Database;
 import fr.theoszanto.sqldatabase.annotations.DatabaseExclude;
 import fr.theoszanto.sqldatabase.annotations.DatabaseField;
 import fr.theoszanto.sqldatabase.annotations.DatabaseForeignKey;
@@ -31,7 +30,7 @@ public class EntitiesFactory {
 		if (table.getColumns().containsKey(name))
 			return table.getColumns().get(name);
 		// Create column
-		return new ColumnEntity(table, name, field.getType(), field);
+		return new ColumnEntity(table, name, field.getType(), field, field.isAnnotationPresent(DatabasePrimaryKey.class));
 	}
 
 	public static @NotNull TableEntity table(@NotNull Class<?> type) {
@@ -55,11 +54,11 @@ public class EntitiesFactory {
 			table.getColumns().put(column.getName(), column);
 
 			// Check primary key
-			if (field.isAnnotationPresent(DatabasePrimaryKey.class))
+			if (column.isPrimary())
 				primaryKeyColumns.add(column);
 
 			// Check foreign key
-			if (!Database.shouldTreatDirectly(column.getType())) {
+			if (column.isForeign()) {
 				DatabaseForeignKey foreignKey = field.getAnnotation(DatabaseForeignKey.class);
 				if (foreignKey != null) {
 					// Retrieve referenced informations

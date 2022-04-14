@@ -3,6 +3,7 @@ package fr.theoszanto.sqldatabase.entities;
 import fr.theoszanto.sqldatabase.Database;
 import fr.theoszanto.sqldatabase.sqlbuilders.SQLBuilder;
 import fr.theoszanto.sqldatabase.sqlbuilders.SQLConditionBuilder;
+import fr.theoszanto.sqldatabase.sqlbuilders.SQLDeleteBuilder;
 import fr.theoszanto.sqldatabase.sqlbuilders.SQLInsertValuesBuilder;
 import fr.theoszanto.sqldatabase.sqlbuilders.SQLSelectBuilder;
 import fr.theoszanto.sqldatabase.sqlbuilders.SQLValue;
@@ -38,6 +39,10 @@ public class TableEntity implements Iterable<@NotNull ColumnEntity> {
 		return this.columns;
 	}
 
+	public int size() {
+		return this.columns.size();
+	}
+
 	public @NotNull PrimaryKeyEntity getPrimaryKey() {
 		if (this.primaryKey == null)
 			throw new IllegalStateException("PrimaryKey not yet defined");
@@ -59,40 +64,60 @@ public class TableEntity implements Iterable<@NotNull ColumnEntity> {
 	}
 
 	public @NotNull SQLSelectBuilder select() {
+		return this.select(false);
+	}
+
+	public @NotNull SQLSelectBuilder select(boolean wherePrimaryKey) {
 		if (this.name.isEmpty())
 			throw new IllegalStateException("Cannot select from model binding table");
 		SQLSelectBuilder builder = SQLBuilder.select().from(this.name);
 		this.addColumns(builder, "");
-		return builder.where(this.getPrimaryKey().condition());
+		if (wherePrimaryKey)
+			builder.where(this.getPrimaryKey().condition());
+		return builder;
 	}
 
 	private void addColumns(@NotNull SQLSelectBuilder builder, @NotNull String prefix) {
 		for (ColumnEntity column : this) {
 			String columnName = column.getName();
-			Class<?> columnType = column.getType();
 			SQLValue columnValue = column.asSQLValue();
-			if (Database.shouldTreatDirectly(columnType))
-				builder.value(columnValue, prefix + columnName);
-			else {
+			if (column.isForeign()) {
 				ForeignKeyEntity foreignKey = this.foreignKeys.get(column);
 				TableEntity foreignTable = foreignKey.getTable();
 				builder.join(SQLBuilder.innerJoin()
 						.table(foreignTable.getName())
 						.on(SQLConditionBuilder.equals(columnValue, foreignKey.getReference().asSQLValue())));
 				foreignTable.addColumns(builder, columnName + Database.BIND_RECURSION_SEPARATOR);
-			}
+			} else
+				builder.value(columnValue, prefix + columnName);
 		}
 	}
 
+	public @NotNull SQLInsertValuesBuilder insert() {
+		return this.insert(false);
+	}
+
 	public @NotNull SQLInsertValuesBuilder upsert() {
+		return this.insert(true);
+	}
+
+	public @NotNull SQLInsertValuesBuilder insert(boolean onConflictUpdate) {
 		if (this.name.isEmpty())
 			throw new IllegalStateException("Cannot insert into model binding table");
 		SQLInsertValuesBuilder builder = SQLBuilder.insertValues().into(this.name);
 		for (ColumnEntity column : this)
-			builder.value(column.getName(), SQLValue.PLACEHOLDER);
-		for (ColumnEntity column : this.getPrimaryKey())
-			builder.onConflict(column.getName());
+			if (onConflictUpdate || !column.isPrimary())
+				builder.value(column.getName(), SQLValue.PLACEHOLDER);
+		if (onConflictUpdate)
+			for (ColumnEntity column : this.getPrimaryKey())
+				builder.onConflict(column.getName());
 		return builder;
+	}
+
+	public @NotNull SQLDeleteBuilder delete() {
+		if (this.name.isEmpty())
+			throw new IllegalStateException("Cannot delete from model binding table");
+		return SQLBuilder.delete().from(this.name).where(this.getPrimaryKey().condition());
 	}
 
 	@Override

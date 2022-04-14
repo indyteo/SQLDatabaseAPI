@@ -27,6 +27,10 @@ public class PrimaryKeyEntity implements Iterable<@NotNull ColumnEntity> {
 		return this.columns;
 	}
 
+	public int size() {
+		return this.columns.size();
+	}
+
 	@Override
 	public @NotNull Iterator<@NotNull ColumnEntity> iterator() {
 		return this.columns.values().iterator();
@@ -43,6 +47,6 @@ public class PrimaryKeyEntity implements Iterable<@NotNull ColumnEntity> {
 	}
 
 	private static @NotNull SQLConditionBuilder conditionEquals(@NotNull Iterator<@NotNull ColumnEntity> i) {
-		return SQLConditionBuilder.equals(SQLValue.column(i.next().getName()), SQLValue.PLACEHOLDER);
+		return SQLConditionBuilder.equals(i.next().asSQLValue(), SQLValue.PLACEHOLDER);
 	}
 }

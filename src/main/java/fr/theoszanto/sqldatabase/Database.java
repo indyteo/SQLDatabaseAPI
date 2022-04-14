@@ -1,8 +1,10 @@
 package fr.theoszanto.sqldatabase;
 
+import fr.theoszanto.sqldatabase.annotations.DatabaseModelBinding;
 import fr.theoszanto.sqldatabase.entities.ColumnEntity;
 import fr.theoszanto.sqldatabase.entities.EntitiesFactory;
 import fr.theoszanto.sqldatabase.entities.TableEntity;
+import fr.theoszanto.sqldatabase.sqlbuilders.SQLConditionBuilder;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
@@ -30,6 +32,7 @@ public class Database {
 	public static final char BIND_RECURSION_SEPARATOR = '_';
 	private static final @NotNull Map<@NotNull Class<?>, @NotNull String> SQL_GET_REQUESTS_CACHE = new HashMap<>();
 	private static final @NotNull Map<@NotNull Class<?>, @NotNull String> SQL_LIST_REQUESTS_CACHE = new HashMap<>();
+	private static final @NotNull Map<@NotNull Class<?>, @NotNull String> SQL_ADD_REQUESTS_CACHE = new HashMap<>();
 	private static final @NotNull Map<@NotNull Class<?>, @NotNull String> SQL_SET_REQUESTS_CACHE = new HashMap<>();
 	private static final @NotNull Map<@NotNull Class<?>, @NotNull String> SQL_DELETE_REQUESTS_CACHE = new HashMap<>();
 	private static final @NotNull Logger LOGGER = Logger.getLogger(Database.class.getName());
@@ -106,6 +109,10 @@ public class Database {
 		return this.getSql(type, SQL_GET_REQUESTS_CACHE.computeIfAbsent(type, Database::buildSqlGetQuery), id);
 	}
 
+	public <T> @Nullable T getWhere(@NotNull Class<T> type, @NotNull SQLConditionBuilder where, @NotNull Object @NotNull... params) throws DatabaseException {
+		return this.getSql(type, EntitiesFactory.table(type).select().where(where).build(), params);
+	}
+
 	public <T> @Nullable T getSql(@NotNull Class<T> type, @NotNull String sql, @Nullable Object @NotNull... params) throws DatabaseException {
 		try {
 			PreparedStatement statement = this.prepare(sql, params);
@@ -122,6 +129,10 @@ public class Database {
 		return this.listSql(type, SQL_LIST_REQUESTS_CACHE.computeIfAbsent(type, Database::buildSqlListQuery));
 	}
 
+	public <T> @Nullable List<@NotNull T> listWhere(@NotNull Class<T> type, @NotNull SQLConditionBuilder where, @NotNull Object @NotNull... params) throws DatabaseException {
+		return this.listSql(type, EntitiesFactory.table(type).select().where(where).build(), params);
+	}
+
 	public <T> @NotNull List<@NotNull T> listSql(@NotNull Class<T> type, @NotNull String sql, @Nullable Object @NotNull... params) throws DatabaseException {
 		try {
 			PreparedStatement statement = this.prepare(sql, params);
@@ -136,24 +147,45 @@ public class Database {
 		}
 	}
 
-	public void set(@NotNull Object value) throws DatabaseException {
+	public int add(@NotNull Object value) throws DatabaseException {
 		try {
-			this.execute(SQL_SET_REQUESTS_CACHE.computeIfAbsent(value.getClass(), Database::buildSqlSetQuery), explode(value));
+			this.execute(SQL_ADD_REQUESTS_CACHE.computeIfAbsent(value.getClass(), Database::buildSqlAddQuery), explode(value, false));
+			InsertedId inserted = this.getSql(InsertedId.class, "SELECT last_insert_rowid() AS id");
+			if (inserted == null)
+				throw new DatabaseException("Could not retrieve inserted id");
+			return inserted.id;
 		} catch (ReflectiveOperationException e) {
 			throw new DatabaseException(e);
 		}
 	}
 
-	private static @NotNull Object @NotNull[] explode(@NotNull Object value) throws ReflectiveOperationException {
+	public void set(@NotNull Object value) throws DatabaseException {
+		try {
+			this.execute(SQL_SET_REQUESTS_CACHE.computeIfAbsent(value.getClass(), Database::buildSqlSetQuery), explode(value, true));
+		} catch (ReflectiveOperationException e) {
+			throw new DatabaseException(e);
+		}
+	}
+
+	private static @NotNull Object @NotNull[] explode(@NotNull Object value, boolean includePrimaries) throws ReflectiveOperationException {
 		TableEntity table = EntitiesFactory.table(value.getClass());
-		Object[] params = new Object[table.getColumns().size()];
+		int size = table.size();
+		if (!includePrimaries)
+			size -= table.getPrimaryKey().size();
+		Object[] params = new Object[size];
 		int i = 0;
 		for (ColumnEntity column : table) {
-			Field field = column.getField();
-			field.setAccessible(true);
-			params[i++] = field.get(value);
+			if (includePrimaries || !column.isPrimary()) {
+				Field field = column.getField();
+				field.setAccessible(true);
+				params[i++] = field.get(value);
+			}
 		}
 		return params;
+	}
+
+	public void delete(@NotNull Class<?> type, @NotNull Object @NotNull... id) throws DatabaseException {
+		this.execute(SQL_DELETE_REQUESTS_CACHE.computeIfAbsent(type, Database::buildSqlDeleteQuery), id);
 	}
 
 	private <T> @NotNull T bind(@NotNull Class<T> type, @NotNull ResultSet result) throws DatabaseException {
@@ -170,20 +202,16 @@ public class Database {
 				String name = prefix + column.getName();
 				Class<?> fieldType = column.getType();
 				Object value;
-				if (shouldTreatDirectly(fieldType))
-					value = getResultObject(fieldType, result, name);
-				else
+				if (column.isForeign())
 					value = this.bind(fieldType, result, name + BIND_RECURSION_SEPARATOR);
+				else
+					value = getResultObject(fieldType, result, name);
 				field.set(object, value);
 			}
 			return object;
 		} catch (IllegalStateException | IllegalArgumentException | ReflectiveOperationException | SQLException e) {
 			throw new DatabaseException(e);
 		}
-	}
-
-	public static boolean shouldTreatDirectly(@NotNull Class<?> type) {
-		return type.isPrimitive() || type == String.class || type == Date.class;
 	}
 
 	private static @Nullable Object getResultObject(@NotNull Class<?> type, @NotNull ResultSet result, @NotNull String name) throws SQLException {
@@ -203,7 +231,7 @@ public class Database {
 			return result.getDouble(name);
 		if (type == char.class) {
 			String str = result.getString(name);
-			return str == null ? 0 : str.charAt(0);
+			return str == null || str.isEmpty() ? 0 : str.charAt(0);
 		}
 		if (type == String.class)
 			return result.getString(name);
@@ -213,15 +241,23 @@ public class Database {
 	}
 
 	private static @NotNull String buildSqlGetQuery(@NotNull Class<?> type) {
-		return EntitiesFactory.table(type).select().build();
+		return EntitiesFactory.table(type).select(true).build();
 	}
 
 	private static @NotNull String buildSqlListQuery(@NotNull Class<?> type) {
-		return EntitiesFactory.table(type).select().where(null).build();
+		return EntitiesFactory.table(type).select().build();
+	}
+
+	private static @NotNull String buildSqlAddQuery(@NotNull Class<?> type) {
+		return EntitiesFactory.table(type).insert().build();
 	}
 
 	private static @NotNull String buildSqlSetQuery(@NotNull Class<?> type) {
 		return EntitiesFactory.table(type).upsert().build();
+	}
+
+	private static @NotNull String buildSqlDeleteQuery(@NotNull Class<?> type) {
+		return EntitiesFactory.table(type).delete().build();
 	}
 
 	public boolean isRunning() {
@@ -230,5 +266,10 @@ public class Database {
 		} catch (SQLException e) {
 			return false;
 		}
+	}
+
+	@DatabaseModelBinding
+	private static class InsertedId {
+		public int id;
 	}
 }

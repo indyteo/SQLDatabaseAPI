@@ -11,6 +11,11 @@ public abstract class SQLBuilder {
 	public static final char QUOTE_NAME = '`';
 	public static final char QUOTE_VAL = '\'';
 
+	private static final @NotNull String QUOTE_NAME_AS_STRING = "" + QUOTE_NAME;
+	private static final @NotNull String DOUBLE_QUOTE_NAME = QUOTE_NAME_AS_STRING + QUOTE_NAME_AS_STRING;
+	private static final @NotNull String QUOTE_VAL_AS_STRING = "" + QUOTE_VAL;
+	private static final @NotNull String DOUBLE_QUOTE_VAL = QUOTE_VAL_AS_STRING + QUOTE_VAL_AS_STRING;
+
 	protected SQLBuilder() {}
 
 	@Contract(value = " -> new", pure = true)
@@ -26,13 +31,13 @@ public abstract class SQLBuilder {
 	public static @NotNull String quoteName(@NotNull String name) {
 		int dot = name.indexOf('.');
 		if (dot == -1)
-			return QUOTE_NAME + name.replace("`", "``") + QUOTE_NAME;
+			return QUOTE_NAME + name.replace(QUOTE_NAME_AS_STRING, DOUBLE_QUOTE_NAME) + QUOTE_NAME;
 		return quoteName(name.substring(0, dot)) + "." + quoteName(name.substring(dot + 1));
 	}
 
 	@Contract(value = "_ -> new", pure = true)
 	public static @NotNull String quoteVal(@Nullable Object value) {
-		return QUOTE_VAL + String.valueOf(value).replace("'", "''") + QUOTE_VAL;
+		return QUOTE_VAL + String.valueOf(value).replace(QUOTE_VAL_AS_STRING, DOUBLE_QUOTE_VAL) + QUOTE_VAL;
 	}
 
 	@Contract(value = " -> new", pure = true)
