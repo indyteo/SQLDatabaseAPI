@@ -184,8 +184,12 @@ public class Database {
 		return params;
 	}
 
-	public void delete(@NotNull Class<?> type, @NotNull Object @NotNull... id) throws DatabaseException {
+	public int delete(@NotNull Class<?> type, @NotNull Object @NotNull... id) throws DatabaseException {
 		this.execute(SQL_DELETE_REQUESTS_CACHE.computeIfAbsent(type, Database::buildSqlDeleteQuery), id);
+		ChangesCount changes = this.getSql(ChangesCount.class, "SELECT changes() AS count");
+		if (changes == null)
+			throw new DatabaseException("Could not retrieve changes count");
+		return changes.count;
 	}
 
 	private <T> @NotNull T bind(@NotNull Class<T> type, @NotNull ResultSet result) throws DatabaseException {
@@ -271,5 +275,10 @@ public class Database {
 	@DatabaseModelBinding
 	private static class InsertedId {
 		public int id;
+	}
+
+	@DatabaseModelBinding
+	private static class ChangesCount {
+		public int count;
 	}
 }
