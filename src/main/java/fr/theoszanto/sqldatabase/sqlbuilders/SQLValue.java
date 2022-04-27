@@ -106,7 +106,7 @@ public class SQLValue {
 
 	@Contract(value = "_, _ -> new", pure = true)
 	public static @NotNull SQLValue function(@NotNull String name, @NotNull SQLValue @NotNull... arguments) {
-		return new SQLValue(name + "(" + CollectionsUtils.join(", ", arguments));
+		return new SQLValue(name + "(" + CollectionsUtils.join(", ", arguments) + ")");
 	}
 
 	@Contract(value = "_ -> new", pure = true)
