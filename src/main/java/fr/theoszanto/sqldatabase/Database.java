@@ -64,7 +64,7 @@ public class Database {
 			LOGGER.info("Connected to database!");
 		} catch (SQLException | IOException e) {
 			LOGGER.log(Level.SEVERE, "Unable to connect to database.", e);
-			throw new DatabaseException("A fatal error occured while connecting to database.", e);
+			throw new DatabaseException("A fatal error occurred while connecting to database.", e);
 		}
 	}
 
@@ -96,10 +96,8 @@ public class Database {
 	}
 
 	public void execute(@NotNull String sql, @Nullable Object @NotNull... params) throws DatabaseException {
-		try {
-			PreparedStatement statement = this.prepare(sql, params);
+		try (PreparedStatement statement = this.prepare(sql, params)) {
 			statement.execute();
-			statement.close();
 		} catch (SQLException e) {
 			throw new DatabaseException(e);
 		}
@@ -114,12 +112,9 @@ public class Database {
 	}
 
 	public <T> @Nullable T getSql(@NotNull Class<T> type, @NotNull String sql, @Nullable Object @NotNull... params) throws DatabaseException {
-		try {
-			PreparedStatement statement = this.prepare(sql, params);
+		try (PreparedStatement statement = this.prepare(sql, params)) {
 			ResultSet result = statement.executeQuery();
-			T get = result.next() ? this.bind(type, result) : null;
-			statement.close();
-			return get;
+			return result.next() ? this.bind(type, result) : null;
 		} catch (SQLException e) {
 			throw new DatabaseException(e);
 		}
@@ -134,13 +129,11 @@ public class Database {
 	}
 
 	public <T> @NotNull List<@NotNull T> listSql(@NotNull Class<T> type, @NotNull String sql, @Nullable Object @NotNull... params) throws DatabaseException {
-		try {
-			PreparedStatement statement = this.prepare(sql, params);
+		try (PreparedStatement statement = this.prepare(sql, params)) {
 			ResultSet result = statement.executeQuery();
 			List<T> list = new ArrayList<>();
 			while (result.next())
 				list.add(this.bind(type, result));
-			statement.close();
 			return list;
 		} catch (SQLException e) {
 			throw new DatabaseException(e);
