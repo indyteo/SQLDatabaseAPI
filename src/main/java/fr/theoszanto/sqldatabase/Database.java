@@ -5,6 +5,7 @@ import fr.theoszanto.sqldatabase.entities.ColumnEntity;
 import fr.theoszanto.sqldatabase.entities.EntitiesFactory;
 import fr.theoszanto.sqldatabase.entities.TableEntity;
 import fr.theoszanto.sqldatabase.sqlbuilders.SQLConditionBuilder;
+import org.jetbrains.annotations.Contract;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
@@ -120,6 +121,26 @@ public class Database {
 		}
 	}
 
+	@SuppressWarnings("unchecked")
+	public <T> @Nullable T getValue(@NotNull Class<T> type, @NotNull String sql, @Nullable Object @NotNull... params) throws DatabaseException {
+		try (PreparedStatement statement = this.prepare(sql, params)) {
+			ResultSet result = statement.executeQuery();
+			return result.next() ? (T) getResultObject(type, result, result.getMetaData().getColumnName(1)) : null;
+		} catch (SQLException e) {
+			throw new DatabaseException(e);
+		}
+	}
+
+	@Contract("_, !null, _, _ -> !null")
+	public <T> @Nullable T getValueOrDefault(@NotNull Class<T> type, @Nullable T def, @NotNull String sql, @Nullable Object @NotNull... params) {
+		try {
+			T val = this.getValue(type, sql, params);
+			return val == null ? def : val;
+		} catch (DatabaseException e) {
+			return def;
+		}
+	}
+
 	public <T> @NotNull List<@NotNull T> list(@NotNull Class<T> type) throws DatabaseException {
 		return this.listSql(type, SQL_LIST_REQUESTS_CACHE.computeIfAbsent(type, Database::buildSqlListQuery));
 	}
@@ -143,10 +164,7 @@ public class Database {
 	public int add(@NotNull Object value) throws DatabaseException {
 		try {
 			this.execute(SQL_ADD_REQUESTS_CACHE.computeIfAbsent(value.getClass(), Database::buildSqlAddQuery), explode(value, false));
-			InsertedId inserted = this.getSql(InsertedId.class, "SELECT last_insert_rowid() AS id");
-			if (inserted == null)
-				throw new DatabaseException("Could not retrieve inserted id");
-			return inserted.id;
+			return this.getValueOrDefault(int.class, -1, "SELECT last_insert_rowid() AS id");
 		} catch (ReflectiveOperationException e) {
 			throw new DatabaseException(e);
 		}
@@ -177,12 +195,9 @@ public class Database {
 		return params;
 	}
 
-	public int delete(@NotNull Class<?> type, @NotNull Object @NotNull... id) throws DatabaseException {
+	public boolean delete(@NotNull Class<?> type, @NotNull Object @NotNull... id) throws DatabaseException {
 		this.execute(SQL_DELETE_REQUESTS_CACHE.computeIfAbsent(type, Database::buildSqlDeleteQuery), id);
-		ChangesCount changes = this.getSql(ChangesCount.class, "SELECT changes() AS count");
-		if (changes == null)
-			throw new DatabaseException("Could not retrieve changes count");
-		return changes.count;
+		return this.getValueOrDefault(int.class, 0, "SELECT changes() AS count") > 0;
 	}
 
 	private <T> @NotNull T bind(@NotNull Class<T> type, @NotNull ResultSet result) throws DatabaseException {
@@ -263,15 +278,5 @@ public class Database {
 		} catch (SQLException e) {
 			return false;
 		}
-	}
-
-	@DatabaseModelBinding
-	private static class InsertedId {
-		public int id;
-	}
-
-	@DatabaseModelBinding
-	private static class ChangesCount {
-		public int count;
 	}
 }
