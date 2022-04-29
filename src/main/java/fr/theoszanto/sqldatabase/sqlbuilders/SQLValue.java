@@ -9,7 +9,10 @@ public class SQLValue {
 	private final @NotNull StringBuilder value;
 
 	public static final @NotNull SQLValue PLACEHOLDER = new SQLValue("?");
+	public static final @NotNull SQLValue FALSE = new SQLValue("FALSE");
+	public static final @NotNull SQLValue TRUE = new SQLValue("TRUE");
 	public static final @NotNull SQLValue NULL = new SQLValue("NULL");
+	public static final @NotNull SQLValue ALL = new SQLValue("*");
 
 	private SQLValue(@NotNull String value) {
 		this.value = new StringBuilder(value.length()).append(value);

@@ -7,9 +7,13 @@ import org.jetbrains.annotations.Contract;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
+
 public abstract class SQLBuilder {
 	public static final char QUOTE_NAME = '`';
 	public static final char QUOTE_VAL = '\'';
+	public static final char DEFAULT_LIKE_ESCAPE_CHAR = '\\';
 
 	private static final @NotNull String QUOTE_NAME_AS_STRING = "" + QUOTE_NAME;
 	private static final @NotNull String DOUBLE_QUOTE_NAME = QUOTE_NAME_AS_STRING + QUOTE_NAME_AS_STRING;
@@ -38,6 +42,17 @@ public abstract class SQLBuilder {
 	@Contract(value = "_ -> new", pure = true)
 	public static @NotNull String quoteVal(@Nullable Object value) {
 		return QUOTE_VAL + String.valueOf(value).replace(QUOTE_VAL_AS_STRING, DOUBLE_QUOTE_VAL) + QUOTE_VAL;
+	}
+
+	@Contract(value = "_ -> new", pure = true)
+	public static @NotNull String escapeLike(@NotNull String like) {
+		return escapeLike(like, DEFAULT_LIKE_ESCAPE_CHAR);
+	}
+
+	@Contract(value = "_, _ -> new", pure = true)
+	public static @NotNull String escapeLike(@NotNull String like, char escape) {
+		String escapeStr = Character.toString(escape);
+		return like.replaceAll("[%_" + Pattern.quote(escapeStr) + "]", Matcher.quoteReplacement(escapeStr) + "$0");
 	}
 
 	@Contract(value = " -> new", pure = true)

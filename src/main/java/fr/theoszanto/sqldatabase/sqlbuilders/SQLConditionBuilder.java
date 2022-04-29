@@ -74,8 +74,13 @@ public class SQLConditionBuilder extends SQLBuilder {
 	}
 
 	@Contract(value = "_, _ -> new", pure = true)
-	public static @NotNull SQLConditionBuilder like(@NotNull String column, @NotNull String pattern) {
-		return comparison(SQLValue.column(column), "LIKE", SQLValue.quoted(pattern));
+	public static @NotNull SQLConditionBuilder like(@NotNull SQLValue value, @NotNull String pattern) {
+		return like(value, pattern, DEFAULT_LIKE_ESCAPE_CHAR);
+	}
+
+	@Contract(value = "_, _, _ -> new", pure = true)
+	public static @NotNull SQLConditionBuilder like(@NotNull SQLValue value, @NotNull String pattern, char escape) {
+		return new SQLConditionBuilder(value + " LIKE " + SQLValue.quoted(pattern) + " ESCAPE " + SQLValue.quoted(escape));
 	}
 
 	@Contract(value = "_, _ -> new", pure = true)
