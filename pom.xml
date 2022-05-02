@@ -69,9 +69,6 @@
 						</goals>
 					</execution>
 				</executions>
-				<configuration>
-					<javadocExecutable>${java.home}/../bin/</javadocExecutable>
-				</configuration>
 			</plugin>
 		</plugins>
 	</build>
