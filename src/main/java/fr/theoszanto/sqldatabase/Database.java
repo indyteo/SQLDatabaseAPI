@@ -50,10 +50,12 @@ public class Database {
 			File data = new File(this.folder, file);
 			if (!data.exists()) {
 				File parent = data.getParentFile();
-				if (parent.mkdirs())
-					LOGGER.info("Created \"" + parent + "\" directory.");
-				else
-					throw new IOException("Unable to create the database directory \"" + parent + "\".");
+				if (!parent.exists()) {
+					if (parent.mkdirs())
+						LOGGER.info("Created \"" + parent + "\" directory.");
+					else
+						throw new IOException("Unable to create the database directory \"" + parent + "\".");
+				}
 				if (data.createNewFile())
 					LOGGER.info("Created \"" + data + "\" file.");
 				else
