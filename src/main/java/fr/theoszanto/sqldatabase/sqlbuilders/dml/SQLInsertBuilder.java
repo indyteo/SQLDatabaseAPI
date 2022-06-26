@@ -1,5 +1,6 @@
-package fr.theoszanto.sqldatabase.sqlbuilders;
+package fr.theoszanto.sqldatabase.sqlbuilders.dml;
 
+import fr.theoszanto.sqldatabase.sqlbuilders.SQLBuilder;
 import org.jetbrains.annotations.Contract;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;

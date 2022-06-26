@@ -1,16 +1,16 @@
-package fr.theoszanto.sqldatabase.sqlbuilders;
+package fr.theoszanto.sqldatabase.sqlbuilders.dml;
 
+import fr.theoszanto.sqldatabase.sqlbuilders.SQLBuilder;
 import fr.theoszanto.sqldatabase.utils.CollectionsUtils;
 import org.jetbrains.annotations.Contract;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
-import java.util.ArrayList;
-import java.util.List;
+import java.util.Map;
 
 public abstract class SQLWOLOBuilder<T extends SQLWOLOBuilder<T>> extends SQLBuilder {
 	protected @Nullable SQLConditionBuilder condition;
-	protected final @NotNull List<@NotNull OrderEntry> orders = new ArrayList<>();
+	protected final @NotNull Map<@NotNull String, @NotNull SortOrder> orders = CollectionsUtils.orderedMap();
 	protected int limit = 0;
 	protected int offset = -1;
 
@@ -33,7 +33,7 @@ public abstract class SQLWOLOBuilder<T extends SQLWOLOBuilder<T>> extends SQLBui
 
 	@Contract(value = "_, _ -> this", mutates = "this")
 	public @NotNull T order(@NotNull String column, @NotNull SortOrder sort) {
-		this.orders.add(new OrderEntry(column, sort));
+		this.orders.put(column, sort);
 		return this.getThis();
 	}
 
@@ -56,7 +56,7 @@ public abstract class SQLWOLOBuilder<T extends SQLWOLOBuilder<T>> extends SQLBui
 		String condition = this.condition == null ? "" : " WHERE " + this.condition;
 
 		// Order select
-		String orders = this.orders.isEmpty() ? "" : " ORDER BY " + CollectionsUtils.join(", ", this.orders);
+		String orders = this.orders.isEmpty() ? "" : " ORDER BY " + CollectionsUtils.join(", ", this.orders, (column, sort) -> quoteName(column) + " " + sort.name());
 
 		// Limit select
 		String limit = this.limit > 0 ? " LIMIT " + this.limit : "";
@@ -69,21 +69,5 @@ public abstract class SQLWOLOBuilder<T extends SQLWOLOBuilder<T>> extends SQLBui
 
 	public enum SortOrder {
 		ASC, DESC
-	}
-
-	static class OrderEntry {
-		private final @NotNull String column;
-		private final @NotNull SortOrder sort;
-
-		public OrderEntry(@NotNull String column, @NotNull SortOrder sort) {
-			this.column = column;
-			this.sort = sort;
-		}
-
-		@Override
-		@Contract(value = " -> new", pure = true)
-		public @NotNull String toString() {
-			return quoteName(this.column) + " " + this.sort.name();
-		}
 	}
 }

@@ -1,8 +1,13 @@
 package fr.theoszanto.sqldatabase.sqlbuilders;
 
-import fr.theoszanto.sqldatabase.sqlbuilders.join.SQLCrossJoinBuilder;
-import fr.theoszanto.sqldatabase.sqlbuilders.join.SQLInnerJoinBuilder;
-import fr.theoszanto.sqldatabase.sqlbuilders.join.SQLLeftJoinBuilder;
+import fr.theoszanto.sqldatabase.sqlbuilders.ddl.SQLAlterTableBuilder;
+import fr.theoszanto.sqldatabase.sqlbuilders.ddl.SQLCreateTableBuilder;
+import fr.theoszanto.sqldatabase.sqlbuilders.ddl.SQLDropTableBuilder;
+import fr.theoszanto.sqldatabase.sqlbuilders.dml.SQLDeleteBuilder;
+import fr.theoszanto.sqldatabase.sqlbuilders.dml.SQLInsertSelectBuilder;
+import fr.theoszanto.sqldatabase.sqlbuilders.dml.SQLInsertValuesBuilder;
+import fr.theoszanto.sqldatabase.sqlbuilders.dml.SQLSelectBuilder;
+import fr.theoszanto.sqldatabase.sqlbuilders.dml.SQLUpdateBuilder;
 import org.jetbrains.annotations.Contract;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
@@ -56,6 +61,21 @@ public abstract class SQLBuilder {
 	}
 
 	@Contract(value = " -> new", pure = true)
+	public static @NotNull SQLCreateTableBuilder createTable() {
+		return new SQLCreateTableBuilder();
+	}
+
+	@Contract(value = " -> new", pure = true)
+	public static @NotNull SQLAlterTableBuilder alterTable() {
+		return new SQLAlterTableBuilder();
+	}
+
+	@Contract(value = " -> new", pure = true)
+	public static @NotNull SQLDropTableBuilder dropTable() {
+		return new SQLDropTableBuilder();
+	}
+
+	@Contract(value = " -> new", pure = true)
 	public static @NotNull SQLSelectBuilder select() {
 		return new SQLSelectBuilder();
 	}
@@ -78,20 +98,5 @@ public abstract class SQLBuilder {
 	@Contract(value = " -> new", pure = true)
 	public static @NotNull SQLDeleteBuilder delete() {
 		return new SQLDeleteBuilder();
-	}
-
-	@Contract(value = " -> new", pure = true)
-	public static @NotNull SQLInnerJoinBuilder innerJoin() {
-		return new SQLInnerJoinBuilder();
-	}
-
-	@Contract(value = " -> new", pure = true)
-	public static @NotNull SQLLeftJoinBuilder leftJoin() {
-		return new SQLLeftJoinBuilder();
-	}
-
-	@Contract(value = " -> new", pure = true)
-	public static @NotNull SQLCrossJoinBuilder crossJoin() {
-		return new SQLCrossJoinBuilder();
 	}
 }

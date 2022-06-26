@@ -1,5 +1,6 @@
 package fr.theoszanto.sqldatabase.sqlbuilders;
 
+import fr.theoszanto.sqldatabase.sqlbuilders.dml.SQLSelectBuilder;
 import fr.theoszanto.sqldatabase.utils.CollectionsUtils;
 import org.jetbrains.annotations.Contract;
 import org.jetbrains.annotations.NotNull;

@@ -2,15 +2,24 @@ package fr.theoszanto.sqldatabase.entities;
 
 import fr.theoszanto.sqldatabase.Database;
 import fr.theoszanto.sqldatabase.sqlbuilders.SQLBuilder;
-import fr.theoszanto.sqldatabase.sqlbuilders.SQLConditionBuilder;
-import fr.theoszanto.sqldatabase.sqlbuilders.SQLDeleteBuilder;
-import fr.theoszanto.sqldatabase.sqlbuilders.SQLInsertValuesBuilder;
-import fr.theoszanto.sqldatabase.sqlbuilders.SQLSelectBuilder;
 import fr.theoszanto.sqldatabase.sqlbuilders.SQLValue;
+import fr.theoszanto.sqldatabase.sqlbuilders.ddl.SQLAlterTableBuilder;
+import fr.theoszanto.sqldatabase.sqlbuilders.ddl.SQLCreateTableBuilder;
+import fr.theoszanto.sqldatabase.sqlbuilders.ddl.SQLDropTableBuilder;
+import fr.theoszanto.sqldatabase.sqlbuilders.ddl.constraint.SQLConstraintBuilder;
+import fr.theoszanto.sqldatabase.sqlbuilders.ddl.constraint.SQLPrimaryKeyConstraintBuilder;
+import fr.theoszanto.sqldatabase.sqlbuilders.dml.SQLConditionBuilder;
+import fr.theoszanto.sqldatabase.sqlbuilders.dml.SQLDeleteBuilder;
+import fr.theoszanto.sqldatabase.sqlbuilders.dml.SQLInsertValuesBuilder;
+import fr.theoszanto.sqldatabase.sqlbuilders.dml.SQLSelectBuilder;
+import fr.theoszanto.sqldatabase.sqlbuilders.dml.join.SQLJoinBuilder;
 import fr.theoszanto.sqldatabase.utils.CollectionsUtils;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
+import java.math.BigDecimal;
+import java.sql.Date;
+import java.sql.Timestamp;
 import java.util.HashMap;
 import java.util.Iterator;
 import java.util.Map;
@@ -63,6 +72,43 @@ public class TableEntity implements Iterable<@NotNull ColumnEntity> {
 		return this.foreignKeys;
 	}
 
+	public @NotNull SQLCreateTableBuilder create() {
+		if (this.name.isEmpty())
+			throw new IllegalStateException("Cannot create model binding table");
+		SQLCreateTableBuilder builder = SQLBuilder.createTable().table(this.name).ifNotExists();
+		for (ColumnEntity column : this) {
+			String columnName = column.getName();
+			builder.column(columnName, getColumnSQLType(column.getType()));
+			if (column.isForeign()) {
+				ForeignKeyEntity foreignKey = this.foreignKeys.get(column);
+				String foreignTableName = foreignKey.getTable().getName();
+				String foreignColumnName = foreignKey.getColumn().getName();
+				builder.constraint(SQLConstraintBuilder.foreignKey()
+						.name("fk_" + this.name + "_" + columnName + "_" + foreignTableName + "_" + foreignColumnName)
+						.column(columnName)
+						.references(foreignTableName)
+						.referencedColumn(foreignColumnName));
+			}
+		}
+		SQLPrimaryKeyConstraintBuilder primaryKey = SQLConstraintBuilder.primaryKey().name("pk_" + this.name);
+		for (ColumnEntity column : this.getPrimaryKey())
+			primaryKey.column(column.getName());
+		builder.constraint(primaryKey);
+		return builder;
+	}
+
+	public @NotNull SQLAlterTableBuilder alter() {
+		if (this.name.isEmpty())
+			throw new IllegalStateException("Cannot alter model binding table");
+		return SQLBuilder.alterTable().table(this.name);
+	}
+
+	public @NotNull SQLDropTableBuilder drop() {
+		if (this.name.isEmpty())
+			throw new IllegalStateException("Cannot drop model binding table");
+		return SQLBuilder.dropTable().table(this.name).ifExists();
+	}
+
 	public @NotNull SQLSelectBuilder select() {
 		return this.select(false);
 	}
@@ -84,7 +130,7 @@ public class TableEntity implements Iterable<@NotNull ColumnEntity> {
 			if (column.isForeign()) {
 				ForeignKeyEntity foreignKey = this.foreignKeys.get(column);
 				TableEntity foreignTable = foreignKey.getTable();
-				builder.join(SQLBuilder.innerJoin()
+				builder.join(SQLJoinBuilder.inner()
 						.table(foreignTable.getName())
 						.on(SQLConditionBuilder.equals(columnValue, foreignKey.getReference().asSQLValue())));
 				foreignTable.addColumns(builder, columnName + Database.BIND_RECURSION_SEPARATOR);
@@ -138,5 +184,23 @@ public class TableEntity implements Iterable<@NotNull ColumnEntity> {
 	@Override
 	public int hashCode() {
 		return type.hashCode();
+	}
+
+	private static @NotNull String getColumnSQLType(@NotNull Class<?> type) {
+		if (type == void.class || type == Void.class)
+			return "NULL";
+		if (type == String.class || type == Date.class || type == Timestamp.class)
+			return "TEXT";
+		if (type == boolean.class || type == Boolean.class
+				|| type == byte.class || type == Byte.class
+				|| type == short.class || type == Short.class
+				|| type == int.class || type == Integer.class
+				|| type == long.class || type == Long.class)
+			return "INTEGER";
+		if (type == float.class || type == Float.class
+				|| type == double.class || type == Double.class
+				|| type == BigDecimal.class)
+			return "REAL";
+		return "BLOB";
 	}
 }

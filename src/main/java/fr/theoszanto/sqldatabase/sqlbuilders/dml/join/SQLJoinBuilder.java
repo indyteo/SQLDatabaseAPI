@@ -1,4 +1,4 @@
-package fr.theoszanto.sqldatabase.sqlbuilders.join;
+package fr.theoszanto.sqldatabase.sqlbuilders.dml.join;
 
 import fr.theoszanto.sqldatabase.sqlbuilders.SQLBuilder;
 import org.jetbrains.annotations.Contract;
@@ -37,5 +37,20 @@ public abstract class SQLJoinBuilder<T extends SQLJoinBuilder<T>> extends SQLBui
 		String alias = this.alias == null ? "" : " AS " + quoteName(this.alias);
 
 		return this.prefix + " JOIN " + quoteName(this.table) + alias;
+	}
+
+	@Contract(value = " -> new", pure = true)
+	public static @NotNull SQLInnerJoinBuilder inner() {
+		return new SQLInnerJoinBuilder();
+	}
+
+	@Contract(value = " -> new", pure = true)
+	public static @NotNull SQLLeftJoinBuilder left() {
+		return new SQLLeftJoinBuilder();
+	}
+
+	@Contract(value = " -> new", pure = true)
+	public static @NotNull SQLCrossJoinBuilder cross() {
+		return new SQLCrossJoinBuilder();
 	}
 }

@@ -1,4 +1,4 @@
-package fr.theoszanto.sqldatabase.sqlbuilders.join;
+package fr.theoszanto.sqldatabase.sqlbuilders.dml.join;
 
 public class SQLLeftJoinBuilder extends SQLInnerLeftJoinBuilder<SQLLeftJoinBuilder> {
 	public SQLLeftJoinBuilder() {

@@ -1,6 +1,6 @@
 package fr.theoszanto.sqldatabase.entities;
 
-import fr.theoszanto.sqldatabase.sqlbuilders.SQLConditionBuilder;
+import fr.theoszanto.sqldatabase.sqlbuilders.dml.SQLConditionBuilder;
 import fr.theoszanto.sqldatabase.sqlbuilders.SQLValue;
 import fr.theoszanto.sqldatabase.utils.CollectionsUtils;
 import org.jetbrains.annotations.NotNull;

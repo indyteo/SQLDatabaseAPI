@@ -14,6 +14,8 @@ import java.util.NoSuchElementException;
 import java.util.Objects;
 import java.util.Set;
 import java.util.StringJoiner;
+import java.util.function.BiFunction;
+import java.util.function.Function;
 
 public class CollectionsUtils {
 	@Contract(value = "_, _ -> new", pure = true)
@@ -21,24 +23,55 @@ public class CollectionsUtils {
 		return join(delimiter, "", "", values);
 	}
 
+	@Contract(value = "_, _, _ -> new", pure = true)
+	public static <T> @NotNull String join(@NotNull String delimiter, T @NotNull[] values, @NotNull Function<? super T, ? extends @NotNull String> toString) {
+		return join(delimiter, "", "", values, toString);
+	}
+
 	@Contract(value = "_, _, _, _ -> new", pure = true)
 	public static @NotNull String join(@NotNull String delimiter, @NotNull String prefix, @NotNull String suffix, @Nullable Object @NotNull[] values) {
+		return join(delimiter, prefix, suffix, values, String::valueOf);
+	}
+
+	@Contract(value = "_, _, _, _, _ -> new", pure = true)
+	public static <T> @NotNull String join(@NotNull String delimiter, @NotNull String prefix, @NotNull String suffix, T @NotNull[] values, @NotNull Function<? super T, ? extends @NotNull String> toString) {
 		StringJoiner joiner = new StringJoiner(delimiter, prefix, suffix);
-		for (Object value : values)
-			joiner.add(String.valueOf(value));
+		for (T value : values)
+			joiner.add(toString.apply(value));
 		return joiner.toString();
 	}
 
 	@Contract(value = "_, _ -> new", pure = true)
-	public static @NotNull String join(@NotNull String delimiter, @NotNull List<?> values) {
+	public static @NotNull String join(@NotNull String delimiter, @NotNull Iterable<?> values) {
 		return join(delimiter, "", "", values);
 	}
 
+	@Contract(value = "_, _, _ -> new", pure = true)
+	public static <T> @NotNull String join(@NotNull String delimiter, @NotNull Iterable<T> values, @NotNull Function<? super T, ? extends @NotNull String> toString) {
+		return join(delimiter, "", "", values, toString);
+	}
+
 	@Contract(value = "_, _, _, _ -> new", pure = true)
-	public static @NotNull String join(@NotNull String delimiter, @NotNull String prefix, @NotNull String suffix, @NotNull List<?> values) {
+	public static @NotNull String join(@NotNull String delimiter, @NotNull String prefix, @NotNull String suffix, @NotNull Iterable<?> values) {
+		return join(delimiter, prefix, suffix, values, String::valueOf);
+	}
+
+	@Contract(value = "_, _, _, _, _ -> new", pure = true)
+	public static <T> @NotNull String join(@NotNull String delimiter, @NotNull String prefix, @NotNull String suffix, @NotNull Iterable<T> values, @NotNull Function<? super T, ? extends @NotNull String> toString) {
 		StringJoiner joiner = new StringJoiner(delimiter, prefix, suffix);
-		for (Object value : values)
-			joiner.add(String.valueOf(value));
+		for (T value : values)
+			joiner.add(toString.apply(value));
+		return joiner.toString();
+	}
+
+	public static <K, V> @NotNull String join(@NotNull String delimiter, @NotNull Map<K, V> map, @NotNull BiFunction<? super K, ? super V, ? extends @NotNull String> pairsFormatter) {
+		return join(delimiter, "", "", map, pairsFormatter);
+	}
+
+	public static <K, V> @NotNull String join(@NotNull String delimiter, @NotNull String prefix, @NotNull String suffix, @NotNull Map<K, V> map, @NotNull BiFunction<? super K, ? super V, ? extends @NotNull String> pairsFormatter) {
+		StringJoiner joiner = new StringJoiner(delimiter, prefix, suffix);
+		for (Map.Entry<K, V> entry : map.entrySet())
+			joiner.add(pairsFormatter.apply(entry.getKey(), entry.getValue()));
 		return joiner.toString();
 	}
 

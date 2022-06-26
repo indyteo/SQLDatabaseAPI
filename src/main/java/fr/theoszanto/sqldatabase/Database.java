@@ -1,10 +1,9 @@
 package fr.theoszanto.sqldatabase;
 
-import fr.theoszanto.sqldatabase.annotations.DatabaseModelBinding;
 import fr.theoszanto.sqldatabase.entities.ColumnEntity;
 import fr.theoszanto.sqldatabase.entities.EntitiesFactory;
 import fr.theoszanto.sqldatabase.entities.TableEntity;
-import fr.theoszanto.sqldatabase.sqlbuilders.SQLConditionBuilder;
+import fr.theoszanto.sqldatabase.sqlbuilders.dml.SQLConditionBuilder;
 import org.jetbrains.annotations.Contract;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
@@ -12,12 +11,14 @@ import org.jetbrains.annotations.Nullable;
 import java.io.File;
 import java.io.IOException;
 import java.lang.reflect.Field;
+import java.math.BigDecimal;
 import java.sql.Connection;
 import java.sql.Date;
 import java.sql.DriverManager;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
+import java.sql.Timestamp;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
@@ -31,6 +32,8 @@ public class Database {
 	private @Nullable Level logLevel = null;
 
 	public static final char BIND_RECURSION_SEPARATOR = '_';
+	private static final @NotNull Map<@NotNull Class<?>, @NotNull String> SQL_CREATE_TABLE_REQUESTS_CACHE = new HashMap<>();
+	private static final @NotNull Map<@NotNull Class<?>, @NotNull String> SQL_DROP_TABLE_REQUESTS_CACHE = new HashMap<>();
 	private static final @NotNull Map<@NotNull Class<?>, @NotNull String> SQL_GET_REQUESTS_CACHE = new HashMap<>();
 	private static final @NotNull Map<@NotNull Class<?>, @NotNull String> SQL_LIST_REQUESTS_CACHE = new HashMap<>();
 	private static final @NotNull Map<@NotNull Class<?>, @NotNull String> SQL_ADD_REQUESTS_CACHE = new HashMap<>();
@@ -104,6 +107,19 @@ public class Database {
 		} catch (SQLException e) {
 			throw new DatabaseException(e);
 		}
+	}
+
+	public void createTable(@NotNull Class<?> type) throws DatabaseException {
+		this.execute(SQL_CREATE_TABLE_REQUESTS_CACHE.computeIfAbsent(type, Database::buildSqlCreateTableQuery));
+	}
+
+	public void dropTable(@NotNull Class<?> type) throws DatabaseException {
+		this.execute(SQL_DROP_TABLE_REQUESTS_CACHE.computeIfAbsent(type, Database::buildSqlDropTableQuery));
+	}
+
+	public void regenerateTable(@NotNull Class<?> type) throws DatabaseException {
+		this.dropTable(type);
+		this.createTable(type);
 	}
 
 	public <T> @Nullable T get(@NotNull Class<T> type, @NotNull Object @NotNull... id) throws DatabaseException {
@@ -229,21 +245,21 @@ public class Database {
 	}
 
 	private static @Nullable Object getResultObject(@NotNull Class<?> type, @NotNull ResultSet result, @NotNull String name) throws SQLException {
-		if (type == boolean.class)
+		if (type == boolean.class || type == Boolean.class)
 			return result.getBoolean(name);
-		if (type == byte.class)
+		if (type == byte.class || type == Byte.class)
 			return result.getByte(name);
-		if (type == short.class)
+		if (type == short.class || type == Short.class)
 			return result.getShort(name);
-		if (type == int.class)
+		if (type == int.class || type == Integer.class)
 			return result.getInt(name);
-		if (type == long.class)
+		if (type == long.class || type == Long.class)
 			return result.getLong(name);
-		if (type == float.class)
+		if (type == float.class || type == Float.class)
 			return result.getFloat(name);
-		if (type == double.class)
+		if (type == double.class || type == Double.class)
 			return result.getDouble(name);
-		if (type == char.class) {
+		if (type == char.class || type == Character.class) {
 			String str = result.getString(name);
 			return str == null || str.isEmpty() ? 0 : str.charAt(0);
 		}
@@ -251,7 +267,23 @@ public class Database {
 			return result.getString(name);
 		if (type == Date.class)
 			return result.getDate(name);
-		return null;
+		if (type == Timestamp.class)
+			return result.getTimestamp(name);
+		if (type == BigDecimal.class)
+			return result.getBigDecimal(name);
+		try {
+			return result.getObject(name, type);
+		} catch (SQLException e) {
+			return null;
+		}
+	}
+
+	private static @NotNull String buildSqlCreateTableQuery(@NotNull Class<?> type) {
+		return EntitiesFactory.table(type).create().build();
+	}
+
+	private static @NotNull String buildSqlDropTableQuery(@NotNull Class<?> type) {
+		return EntitiesFactory.table(type).drop().build();
 	}
 
 	private static @NotNull String buildSqlGetQuery(@NotNull Class<?> type) {

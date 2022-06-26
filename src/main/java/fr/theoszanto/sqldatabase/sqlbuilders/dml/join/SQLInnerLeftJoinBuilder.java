@@ -1,6 +1,6 @@
-package fr.theoszanto.sqldatabase.sqlbuilders.join;
+package fr.theoszanto.sqldatabase.sqlbuilders.dml.join;
 
-import fr.theoszanto.sqldatabase.sqlbuilders.SQLConditionBuilder;
+import fr.theoszanto.sqldatabase.sqlbuilders.dml.SQLConditionBuilder;
 import org.jetbrains.annotations.Contract;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;

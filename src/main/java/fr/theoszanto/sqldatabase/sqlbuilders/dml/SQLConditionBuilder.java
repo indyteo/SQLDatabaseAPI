@@ -1,5 +1,7 @@
-package fr.theoszanto.sqldatabase.sqlbuilders;
+package fr.theoszanto.sqldatabase.sqlbuilders.dml;
 
+import fr.theoszanto.sqldatabase.sqlbuilders.SQLBuilder;
+import fr.theoszanto.sqldatabase.sqlbuilders.SQLValue;
 import org.jetbrains.annotations.Contract;
 import org.jetbrains.annotations.NotNull;
 
@@ -101,5 +103,15 @@ public class SQLConditionBuilder extends SQLBuilder {
 	@Contract(value = "_, _, _ -> new", pure = true)
 	public static @NotNull SQLConditionBuilder between(@NotNull SQLValue value, @NotNull SQLValue min, @NotNull SQLValue max) {
 		return new SQLConditionBuilder(value + " BETWEEN " + min + " AND " + max);
+	}
+
+	@Contract(value = " -> new", pure = true)
+	public static @NotNull SQLConditionBuilder alwaysTrue() {
+		return new SQLConditionBuilder("TRUE");
+	}
+
+	@Contract(value = " -> new", pure = true)
+	public static @NotNull SQLConditionBuilder alwaysFalse() {
+		return new SQLConditionBuilder("FALSE");
 	}
 }
