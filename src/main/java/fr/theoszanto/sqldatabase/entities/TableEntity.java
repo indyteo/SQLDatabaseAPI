@@ -90,6 +90,7 @@ public class TableEntity implements Iterable<@NotNull ColumnEntity> {
 						.referencedColumn(foreignColumnName));
 			}
 		}
+		// TODO Set primary key on single column with AUTO_INCREMENT if necessary
 		SQLPrimaryKeyConstraintBuilder primaryKey = SQLConstraintBuilder.primaryKey().name("pk_" + this.name);
 		for (ColumnEntity column : this.getPrimaryKey())
 			primaryKey.column(column.getName());

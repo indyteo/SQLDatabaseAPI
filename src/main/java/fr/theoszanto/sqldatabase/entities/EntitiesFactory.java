@@ -10,10 +10,13 @@ import org.jetbrains.annotations.NotNull;
 
 import java.lang.reflect.Field;
 import java.lang.reflect.Modifier;
+import java.math.BigDecimal;
+import java.math.BigInteger;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.function.Consumer;
 
 public class EntitiesFactory {
@@ -48,20 +51,23 @@ public class EntitiesFactory {
 		TableEntity table = new TableEntity(tableName, type);
 		tablesRegistry.put(type, table);
 		List<ColumnEntity> primaryKeyColumns = new ArrayList<>();
+		AtomicBoolean autoIncrementPrimaryKey = new AtomicBoolean(false);
 		forEachFields(type, field -> {
 			// Get column
 			ColumnEntity column = column(table, field);
 			table.getColumns().put(column.getName(), column);
 
 			// Check primary key
-			if (column.isPrimary())
+			if (column.isPrimary()) {
 				primaryKeyColumns.add(column);
+				autoIncrementPrimaryKey.set(autoIncrementPrimaryKey.get() || field.getAnnotation(DatabasePrimaryKey.class).autoIncrement());
+			}
 
 			// Check foreign key
 			if (column.isForeign()) {
 				DatabaseForeignKey foreignKey = field.getAnnotation(DatabaseForeignKey.class);
 				if (foreignKey != null) {
-					// Retrieve referenced informations
+					// Retrieve referenced information
 					TableEntity referencedTable = table(column.getType());
 					String referenced = foreignKey.value();
 					if (referenced.isEmpty())
@@ -73,7 +79,13 @@ public class EntitiesFactory {
 				}
 			}
 		});
-		table.setPrimaryKey(new PrimaryKeyEntity(primaryKeyColumns));
+		if (autoIncrementPrimaryKey.get()) {
+			if (primaryKeyColumns.size() != 1)
+				throw new IllegalStateException("Cannot create multi-column auto-increment primary key: " + tableName);
+			if (invalidAutoIncrementType(primaryKeyColumns.get(0).getType()))
+				throw new IllegalStateException();
+		}
+		table.setPrimaryKey(new PrimaryKeyEntity(autoIncrementPrimaryKey.get(), primaryKeyColumns));
 		return table;
 	}
 
@@ -84,5 +96,13 @@ public class EntitiesFactory {
 		Class<?> superType = type.getSuperclass();
 		if (superType != null && superType != Object.class)
 			forEachFields(superType, action);
+	}
+
+	private static boolean invalidAutoIncrementType(@NotNull Class<?> type) {
+		return type != byte.class && type != Byte.class
+				&& type != short.class && type != Short.class
+				&& type != int.class && type != Integer.class
+				&& type != long.class && type != Long.class
+				&& type != BigInteger.class && type != BigDecimal.class;
 	}
 }

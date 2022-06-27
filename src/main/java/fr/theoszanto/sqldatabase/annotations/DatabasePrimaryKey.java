@@ -9,4 +9,6 @@ import java.lang.annotation.Target;
 @Documented
 @Retention(RetentionPolicy.RUNTIME)
 @Target(ElementType.FIELD)
-public @interface DatabasePrimaryKey {}
+public @interface DatabasePrimaryKey {
+	boolean autoIncrement() default false;
+}

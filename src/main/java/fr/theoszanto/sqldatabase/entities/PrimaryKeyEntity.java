@@ -11,16 +11,23 @@ import java.util.List;
 import java.util.Map;
 
 public class PrimaryKeyEntity implements Iterable<@NotNull ColumnEntity> {
+	private final boolean autoIncrement;
 	private final @NotNull Map<@NotNull String, @NotNull ColumnEntity> columns = CollectionsUtils.orderedMap();
 
-	public PrimaryKeyEntity(@NotNull ColumnEntity @NotNull... columns) {
+	public PrimaryKeyEntity(boolean autoIncrement, @NotNull ColumnEntity @NotNull... columns) {
+		this.autoIncrement = autoIncrement && columns.length == 1;
 		for (ColumnEntity column : columns)
 			this.columns.put(column.getName(), column);
 	}
 
-	public PrimaryKeyEntity(@NotNull List<@NotNull ColumnEntity> columns) {
+	public PrimaryKeyEntity(boolean autoIncrement, @NotNull List<@NotNull ColumnEntity> columns) {
+		this.autoIncrement = autoIncrement && columns.size() == 1;
 		for (ColumnEntity column : columns)
 			this.columns.put(column.getName(), column);
+	}
+
+	public boolean isAutoIncrement() {
+		return this.autoIncrement;
 	}
 
 	public @NotNull Map<@NotNull String, @NotNull ColumnEntity> getColumns() {
