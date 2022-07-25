@@ -3,6 +3,7 @@ package fr.theoszanto.sqldatabase;
 import fr.theoszanto.sqldatabase.entities.ColumnEntity;
 import fr.theoszanto.sqldatabase.entities.EntitiesFactory;
 import fr.theoszanto.sqldatabase.entities.TableEntity;
+import fr.theoszanto.sqldatabase.sqlbuilders.SQLValue;
 import fr.theoszanto.sqldatabase.sqlbuilders.dml.SQLConditionBuilder;
 import org.jetbrains.annotations.Contract;
 import org.jetbrains.annotations.NotNull;
@@ -36,6 +37,7 @@ public class Database {
 	private static final @NotNull Map<@NotNull Class<?>, @NotNull String> SQL_DROP_TABLE_REQUESTS_CACHE = new HashMap<>();
 	private static final @NotNull Map<@NotNull Class<?>, @NotNull String> SQL_GET_REQUESTS_CACHE = new HashMap<>();
 	private static final @NotNull Map<@NotNull Class<?>, @NotNull String> SQL_LIST_REQUESTS_CACHE = new HashMap<>();
+	private static final @NotNull Map<@NotNull Class<?>, @NotNull String> SQL_COUNT_REQUESTS_CACHE = new HashMap<>();
 	private static final @NotNull Map<@NotNull Class<?>, @NotNull String> SQL_ADD_REQUESTS_CACHE = new HashMap<>();
 	private static final @NotNull Map<@NotNull Class<?>, @NotNull String> SQL_SET_REQUESTS_CACHE = new HashMap<>();
 	private static final @NotNull Map<@NotNull Class<?>, @NotNull String> SQL_DELETE_REQUESTS_CACHE = new HashMap<>();
@@ -163,7 +165,7 @@ public class Database {
 		return this.listSql(type, SQL_LIST_REQUESTS_CACHE.computeIfAbsent(type, Database::buildSqlListQuery));
 	}
 
-	public <T> @Nullable List<@NotNull T> listWhere(@NotNull Class<T> type, @NotNull SQLConditionBuilder where, @NotNull Object @NotNull... params) throws DatabaseException {
+	public <T> @Nullable List<@NotNull T> listWhere(@NotNull Class<T> type, @Nullable SQLConditionBuilder where, @NotNull Object @NotNull... params) throws DatabaseException {
 		return this.listSql(type, EntitiesFactory.table(type).select().where(where).build(), params);
 	}
 
@@ -177,6 +179,14 @@ public class Database {
 		} catch (SQLException e) {
 			throw new DatabaseException(e);
 		}
+	}
+
+	public int count(@NotNull Class<?> type) throws DatabaseException {
+		return this.getValueOrDefault(int.class, -1, SQL_COUNT_REQUESTS_CACHE.computeIfAbsent(type, Database::buildSqlCountQuery));
+	}
+
+	public int countWhere(@NotNull Class<?> type, @Nullable SQLConditionBuilder where, @NotNull Object @NotNull... params) throws DatabaseException {
+		return this.getValueOrDefault(int.class, -1, EntitiesFactory.table(type).select().value(SQLValue.COUNT_ALL).where(where).build(), params);
 	}
 
 	public int add(@NotNull Object value) throws DatabaseException {
@@ -292,6 +302,10 @@ public class Database {
 
 	private static @NotNull String buildSqlListQuery(@NotNull Class<?> type) {
 		return EntitiesFactory.table(type).select().build();
+	}
+
+	private static @NotNull String buildSqlCountQuery(@NotNull Class<?> type) {
+		return EntitiesFactory.table(type).select().value(SQLValue.function("count", SQLValue.ALL)).build();
 	}
 
 	private static @NotNull String buildSqlAddQuery(@NotNull Class<?> type) {

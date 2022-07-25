@@ -55,7 +55,7 @@ public class EntitiesFactory {
 		forEachFields(type, field -> {
 			// Get column
 			ColumnEntity column = column(table, field);
-			table.getColumns().put(column.getName(), column);
+			table.addColumn(column);
 
 			// Check primary key
 			if (column.isPrimary()) {

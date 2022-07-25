@@ -15,6 +15,8 @@ public class SQLValue {
 	public static final @NotNull SQLValue NULL = new SQLValue("NULL");
 	public static final @NotNull SQLValue ALL = new SQLValue("*");
 
+	public static final @NotNull SQLValue COUNT_ALL = SQLValue.function("count", SQLValue.ALL);
+
 	private SQLValue(@NotNull String value) {
 		this.value = new StringBuilder(value.length()).append(value);
 	}
@@ -85,6 +87,19 @@ public class SQLValue {
 	@Contract(value = " -> new", pure = true)
 	public @NotNull String toString() {
 		return this.value.toString();
+	}
+
+	@Override
+	public boolean equals(@Nullable Object o) {
+		if (this == o) return true;
+		if (o == null || getClass() != o.getClass()) return false;
+		SQLValue sqlValue = (SQLValue) o;
+		return this.toString().equals(sqlValue.toString());
+	}
+
+	@Override
+	public int hashCode() {
+		return this.toString().hashCode();
 	}
 
 	@Contract(value = "_ -> new", pure = true)

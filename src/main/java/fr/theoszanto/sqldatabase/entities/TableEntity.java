@@ -30,6 +30,7 @@ public class TableEntity implements Iterable<@NotNull ColumnEntity> {
 	private final @NotNull Map<@NotNull String, @NotNull ColumnEntity> columns = CollectionsUtils.orderedMap();
 	private @Nullable PrimaryKeyEntity primaryKey;
 	private final @NotNull Map<@NotNull ColumnEntity, @NotNull ForeignKeyEntity> foreignKeys = new HashMap<>();
+	private final @NotNull Map<@NotNull String, @NotNull ColumnEntity> columnsByFieldName = new HashMap<>();
 
 	public TableEntity(@NotNull String name, @NotNull Class<?> type) {
 		this.name = name;
@@ -58,18 +59,27 @@ public class TableEntity implements Iterable<@NotNull ColumnEntity> {
 		return this.primaryKey;
 	}
 
-	void setPrimaryKey(@NotNull PrimaryKeyEntity primaryKey) {
+	/* package-private */ void setPrimaryKey(@NotNull PrimaryKeyEntity primaryKey) {
 		if (this.primaryKey != null)
 			throw new IllegalStateException("PrimaryKey already defined");
 		this.primaryKey = primaryKey;
 	}
 
-	boolean needsPrimaryKey() {
+	/* package-private */ boolean needsPrimaryKey() {
 		return this.primaryKey == null;
 	}
 
 	public @NotNull Map<@NotNull ColumnEntity, @NotNull ForeignKeyEntity> getForeignKeys() {
 		return this.foreignKeys;
+	}
+
+	/* package-private */ void addColumn(@NotNull ColumnEntity column) {
+		this.columns.put(column.getName(), column);
+		this.columnsByFieldName.put(column.getField().getName(), column);
+	}
+
+	public @Nullable ColumnEntity getColumnByFieldName(@NotNull String fieldName) {
+		return this.columnsByFieldName.get(fieldName);
 	}
 
 	public @NotNull SQLCreateTableBuilder create() {
