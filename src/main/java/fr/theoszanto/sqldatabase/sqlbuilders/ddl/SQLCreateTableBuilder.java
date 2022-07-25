@@ -107,7 +107,7 @@ public class SQLCreateTableBuilder extends SQLBuilder {
 		// Table options
 		String options = CollectionsUtils.join(", ", " ", "", this.options);
 
-		return "CREATE " + temporary + "TABLE " + ifNotExists + definition + options;
+		return "CREATE " + temporary + "TABLE " + ifNotExists + this.table + " " + definition + options;
 	}
 
 	public enum Option {
