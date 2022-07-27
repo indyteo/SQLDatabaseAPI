@@ -5,7 +5,9 @@ import org.jetbrains.annotations.NotNull;
 
 import java.lang.reflect.Field;
 import java.math.BigDecimal;
+import java.math.BigInteger;
 import java.sql.Date;
+import java.sql.Time;
 import java.sql.Timestamp;
 
 public class ColumnEntity {
@@ -50,8 +52,9 @@ public class ColumnEntity {
 				&& this.type != Byte.class && this.type != Short.class
 				&& this.type != Integer.class && this.type != Long.class
 				&& this.type != Float.class && this.type != Double.class
-				&& this.type != String.class && this.type != BigDecimal.class
-				&& this.type != Date.class && this.type != Timestamp.class;
+				&& this.type != BigInteger.class && this.type != BigDecimal.class
+				&& this.type != Date.class && this.type != Time.class
+				&& this.type != Timestamp.class && this.type != String.class;
 	}
 
 	public @NotNull SQLValue asSQLValue() {

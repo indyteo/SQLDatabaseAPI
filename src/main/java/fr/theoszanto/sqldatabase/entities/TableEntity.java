@@ -19,6 +19,7 @@ import org.jetbrains.annotations.Nullable;
 
 import java.math.BigDecimal;
 import java.sql.Date;
+import java.sql.Time;
 import java.sql.Timestamp;
 import java.util.HashMap;
 import java.util.Iterator;
@@ -202,7 +203,8 @@ public class TableEntity implements Iterable<@NotNull ColumnEntity> {
 	private static @NotNull String getColumnSQLType(@NotNull Class<?> type) {
 		if (type == void.class || type == Void.class)
 			return "NULL";
-		if (type == String.class || type == Date.class || type == Timestamp.class)
+		if (type == String.class || type == Timestamp.class
+				|| type == Date.class || type == Time.class)
 			return "TEXT";
 		if (type == boolean.class || type == Boolean.class
 				|| type == byte.class || type == Byte.class

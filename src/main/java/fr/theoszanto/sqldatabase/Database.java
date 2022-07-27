@@ -19,6 +19,7 @@ import java.sql.DriverManager;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
+import java.sql.Time;
 import java.sql.Timestamp;
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -284,6 +285,8 @@ public class Database {
 			return result.getString(name);
 		if (type == Date.class)
 			return result.getDate(name);
+		if (type == Time.class)
+			return result.getTime(name);
 		if (type == Timestamp.class)
 			return result.getTimestamp(name);
 		if (type == BigDecimal.class)
