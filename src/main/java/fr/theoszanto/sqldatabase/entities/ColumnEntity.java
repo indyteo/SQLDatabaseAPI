@@ -4,7 +4,9 @@ import fr.theoszanto.sqldatabase.sqlbuilders.SQLValue;
 import org.jetbrains.annotations.NotNull;
 
 import java.lang.reflect.Field;
+import java.math.BigDecimal;
 import java.sql.Date;
+import java.sql.Timestamp;
 
 public class ColumnEntity {
 	private final @NotNull TableEntity table;
@@ -42,7 +44,14 @@ public class ColumnEntity {
 	}
 
 	public boolean isForeign() {
-		return !this.type.isPrimitive() && this.type != String.class && this.type != Date.class;
+		return !this.type.isPrimitive()
+				&& this.type != void.class && this.type != Void.class
+				&& this.type != Boolean.class && this.type != Character.class
+				&& this.type != Byte.class && this.type != Short.class
+				&& this.type != Integer.class && this.type != Long.class
+				&& this.type != Float.class && this.type != Double.class
+				&& this.type != String.class && this.type != BigDecimal.class
+				&& this.type != Date.class && this.type != Timestamp.class;
 	}
 
 	public @NotNull SQLValue asSQLValue() {

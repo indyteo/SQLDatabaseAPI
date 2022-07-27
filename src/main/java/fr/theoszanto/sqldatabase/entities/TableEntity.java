@@ -140,11 +140,13 @@ public class TableEntity implements Iterable<@NotNull ColumnEntity> {
 			SQLValue columnValue = column.asSQLValue();
 			if (column.isForeign()) {
 				ForeignKeyEntity foreignKey = this.foreignKeys.get(column);
-				TableEntity foreignTable = foreignKey.getTable();
-				builder.join(SQLJoinBuilder.inner()
-						.table(foreignTable.getName())
-						.on(SQLConditionBuilder.equals(columnValue, foreignKey.getReference().asSQLValue())));
-				foreignTable.addColumns(builder, columnName + Database.BIND_RECURSION_SEPARATOR);
+				if (foreignKey != null) {
+					TableEntity foreignTable = foreignKey.getTable();
+					builder.join(SQLJoinBuilder.inner()
+							.table(foreignTable.getName())
+							.on(SQLConditionBuilder.equals(columnValue, foreignKey.getReference().asSQLValue())));
+					foreignTable.addColumns(builder, prefix + columnName + Database.BIND_RECURSION_SEPARATOR);
+				}
 			} else
 				builder.value(columnValue, prefix + columnName);
 		}

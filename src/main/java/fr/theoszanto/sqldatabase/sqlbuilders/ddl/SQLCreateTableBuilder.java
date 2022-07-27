@@ -119,7 +119,7 @@ public class SQLCreateTableBuilder extends SQLBuilder {
 		}
 	}
 
-	/* packag-private */ static class Column implements Comparable<Column> {
+	/* package-private */ static class Column implements Comparable<Column> {
 		private final @NotNull String name;
 		private final @Nullable String type;
 		// TODO Create ColumnConstraint type that differs from table Constraint

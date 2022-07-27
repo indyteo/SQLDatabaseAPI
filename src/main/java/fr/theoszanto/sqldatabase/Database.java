@@ -240,6 +240,11 @@ public class Database {
 				Field field = column.getField();
 				field.setAccessible(true);
 				String name = prefix + column.getName();
+				try {
+					result.findColumn(name);
+				} catch (SQLException e) {
+					continue;
+				}
 				Class<?> fieldType = column.getType();
 				Object value;
 				if (column.isForeign())
@@ -255,6 +260,8 @@ public class Database {
 	}
 
 	private static @Nullable Object getResultObject(@NotNull Class<?> type, @NotNull ResultSet result, @NotNull String name) throws SQLException {
+		if (type == void.class || type == Void.class)
+			return null;
 		if (type == boolean.class || type == Boolean.class)
 			return result.getBoolean(name);
 		if (type == byte.class || type == Byte.class)
