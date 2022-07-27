@@ -21,6 +21,7 @@ import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.sql.Time;
 import java.sql.Timestamp;
+import java.time.Instant;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
@@ -287,8 +288,13 @@ public class Database {
 			return result.getDate(name);
 		if (type == Time.class)
 			return result.getTime(name);
-		if (type == Timestamp.class)
-			return result.getTimestamp(name);
+		if (type == Timestamp.class) {
+			try {
+				return result.getTimestamp(name);
+			} catch (SQLException e) {
+				return Timestamp.from(Instant.ofEpochMilli(result.getLong(name)));
+			}
+		}
 		if (type == BigDecimal.class)
 			return result.getBigDecimal(name);
 		try {
