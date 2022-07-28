@@ -3,6 +3,7 @@ package fr.theoszanto.sqldatabase;
 import fr.theoszanto.sqldatabase.entities.ColumnEntity;
 import fr.theoszanto.sqldatabase.entities.EntitiesFactory;
 import fr.theoszanto.sqldatabase.entities.TableEntity;
+import fr.theoszanto.sqldatabase.sqlbuilders.SQLBuilder;
 import fr.theoszanto.sqldatabase.sqlbuilders.SQLValue;
 import fr.theoszanto.sqldatabase.sqlbuilders.dml.SQLConditionBuilder;
 import org.jetbrains.annotations.Contract;
@@ -188,7 +189,7 @@ public class Database {
 	}
 
 	public int countWhere(@NotNull Class<?> type, @Nullable SQLConditionBuilder where, @NotNull Object @NotNull... params) throws DatabaseException {
-		return this.getValueOrDefault(int.class, -1, EntitiesFactory.table(type).select().value(SQLValue.COUNT_ALL).where(where).build(), params);
+		return this.getValueOrDefault(int.class, -1, SQLBuilder.select().from(EntitiesFactory.table(type).getName()).value(SQLValue.COUNT_ALL).where(where).build(), params);
 	}
 
 	public int add(@NotNull Object value) throws DatabaseException {
@@ -321,7 +322,7 @@ public class Database {
 	}
 
 	private static @NotNull String buildSqlCountQuery(@NotNull Class<?> type) {
-		return EntitiesFactory.table(type).select().value(SQLValue.function("count", SQLValue.ALL)).build();
+		return SQLBuilder.select().from(EntitiesFactory.table(type).getName()).value(SQLValue.COUNT_ALL).build();
 	}
 
 	private static @NotNull String buildSqlAddQuery(@NotNull Class<?> type) {
