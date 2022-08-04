@@ -89,17 +89,21 @@ public class TableEntity implements Iterable<@NotNull ColumnEntity> {
 		SQLCreateTableBuilder builder = SQLBuilder.createTable().table(this.name).ifNotExists();
 		for (ColumnEntity column : this) {
 			String columnName = column.getName();
-			builder.column(columnName, getColumnSQLType(column.getType()));
+			String type;
 			if (column.isForeign()) {
 				ForeignKeyEntity foreignKey = this.foreignKeys.get(column);
 				String foreignTableName = foreignKey.getTable().getName();
-				String foreignColumnName = foreignKey.getColumn().getName();
+				ColumnEntity foreignColumn = foreignKey.getReference();
+				String foreignColumnName = foreignColumn.getName();
+				type = getColumnSQLType(foreignColumn.getType());
 				builder.constraint(SQLConstraintBuilder.foreignKey()
 						.name("fk_" + this.name + "_" + columnName + "_" + foreignTableName + "_" + foreignColumnName)
 						.column(columnName)
 						.references(foreignTableName)
 						.referencedColumn(foreignColumnName));
-			}
+			} else
+				type = getColumnSQLType(column.getType());
+			builder.column(columnName, type);
 		}
 		// TODO Set primary key on single column with AUTO_INCREMENT if necessary
 		SQLPrimaryKeyConstraintBuilder primaryKey = SQLConstraintBuilder.primaryKey().name("pk_" + this.name);
@@ -148,8 +152,8 @@ public class TableEntity implements Iterable<@NotNull ColumnEntity> {
 							.on(SQLConditionBuilder.equals(columnValue, foreignKey.getReference().asSQLValue())));
 					foreignTable.addColumns(builder, prefix + columnName + Database.BIND_RECURSION_SEPARATOR);
 				}
-			} else
-				builder.value(columnValue, prefix + columnName);
+			}
+			builder.value(columnValue, prefix + columnName);
 		}
 	}
 

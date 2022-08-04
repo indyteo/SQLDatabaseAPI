@@ -2,6 +2,7 @@ package fr.theoszanto.sqldatabase;
 
 import fr.theoszanto.sqldatabase.entities.ColumnEntity;
 import fr.theoszanto.sqldatabase.entities.EntitiesFactory;
+import fr.theoszanto.sqldatabase.entities.ForeignKeyEntity;
 import fr.theoszanto.sqldatabase.entities.TableEntity;
 import fr.theoszanto.sqldatabase.sqlbuilders.SQLBuilder;
 import fr.theoszanto.sqldatabase.sqlbuilders.SQLValue;
@@ -168,7 +169,7 @@ public class Database {
 		return this.listSql(type, SQL_LIST_REQUESTS_CACHE.computeIfAbsent(type, Database::buildSqlListQuery));
 	}
 
-	public <T> @Nullable List<@NotNull T> listWhere(@NotNull Class<T> type, @Nullable SQLConditionBuilder where, @NotNull Object @NotNull... params) throws DatabaseException {
+	public <T> @NotNull List<@NotNull T> listWhere(@NotNull Class<T> type, @Nullable SQLConditionBuilder where, @NotNull Object @NotNull... params) throws DatabaseException {
 		return this.listSql(type, EntitiesFactory.table(type).select().where(where).build(), params);
 	}
 
@@ -220,7 +221,16 @@ public class Database {
 			if (includePrimaries || !column.isPrimary()) {
 				Field field = column.getField();
 				field.setAccessible(true);
-				params[i++] = field.get(value);
+				Object obj = field.get(value);
+				if (column.isForeign()) {
+					ForeignKeyEntity foreignKey = table.getForeignKeys().get(column);
+					if (foreignKey != null) {
+						Field foreignField = foreignKey.getReference().getField();
+						foreignField.setAccessible(true);
+						obj = foreignField.get(obj);
+					}
+				}
+				params[i++] = obj;
 			}
 		}
 		return params;
@@ -246,6 +256,8 @@ public class Database {
 				try {
 					result.findColumn(name);
 				} catch (SQLException e) {
+					if (this.logLevel != null)
+						LOGGER.log(this.logLevel, "Ignoring column: " + name + " (not found in result set)");
 					continue;
 				}
 				Class<?> fieldType = column.getType();
