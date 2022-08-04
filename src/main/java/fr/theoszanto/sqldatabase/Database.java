@@ -264,8 +264,11 @@ public class Database {
 				Object value;
 				if (column.isForeign())
 					value = this.bind(fieldType, result, name + BIND_RECURSION_SEPARATOR);
-				else
+				else {
 					value = getResultObject(fieldType, result, name);
+					if (result.wasNull() && !fieldType.isPrimitive())
+						value = null;
+				}
 				field.set(object, value);
 			}
 			return object;
