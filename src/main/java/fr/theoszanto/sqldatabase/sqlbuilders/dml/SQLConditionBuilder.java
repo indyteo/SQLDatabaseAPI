@@ -105,6 +105,16 @@ public class SQLConditionBuilder extends SQLBuilder {
 		return new SQLConditionBuilder(value + " BETWEEN " + min + " AND " + max);
 	}
 
+	@Contract(value = "_ -> new", pure = true)
+	public static @NotNull SQLConditionBuilder isNull(@NotNull SQLValue value) {
+		return comparison(value, "IS", SQLValue.NULL);
+	}
+
+	@Contract(value = "_ -> new", pure = true)
+	public static @NotNull SQLConditionBuilder isNotNull(@NotNull SQLValue value) {
+		return comparison(value, "IS NOT", SQLValue.NULL);
+	}
+
 	@Contract(value = " -> new", pure = true)
 	public static @NotNull SQLConditionBuilder alwaysTrue() {
 		return new SQLConditionBuilder("TRUE");
