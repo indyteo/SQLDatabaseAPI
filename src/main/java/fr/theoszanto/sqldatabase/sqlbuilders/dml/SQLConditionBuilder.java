@@ -5,6 +5,9 @@ import fr.theoszanto.sqldatabase.sqlbuilders.SQLValue;
 import org.jetbrains.annotations.Contract;
 import org.jetbrains.annotations.NotNull;
 
+import java.util.Arrays;
+import java.util.List;
+
 public class SQLConditionBuilder extends SQLBuilder {
 	private final @NotNull StringBuilder condition;
 
@@ -123,5 +126,41 @@ public class SQLConditionBuilder extends SQLBuilder {
 	@Contract(value = " -> new", pure = true)
 	public static @NotNull SQLConditionBuilder alwaysFalse() {
 		return new SQLConditionBuilder("FALSE");
+	}
+
+	public static class Helpers {
+		private Helpers() {
+			throw new UnsupportedOperationException();
+		}
+
+		private static @NotNull SQLConditionBuilder join(@NotNull String keyword, @NotNull List<@NotNull SQLConditionBuilder> conditions) {
+			if (conditions.isEmpty())
+				throw new IllegalArgumentException("Cannot \"" + keyword + "\" with no conditions");
+			if (conditions.size() == 1)
+				return conditions.get(0);
+			SQLConditionBuilder result = new SQLConditionBuilder("(");
+			StringBuilder builder = result.condition;
+			builder.append(conditions.get(0));
+			for (int i = 1; i < conditions.size(); i++)
+				builder.append(") ").append(keyword).append(" (").append(conditions.get(i));
+			builder.append(')');
+			return result;
+		}
+
+		public static @NotNull SQLConditionBuilder and(@NotNull List<@NotNull SQLConditionBuilder> conditions) {
+			return join("AND", conditions);
+		}
+
+		public static @NotNull SQLConditionBuilder and(@NotNull SQLConditionBuilder @NotNull... conditions) {
+			return and(Arrays.asList(conditions));
+		}
+
+		public static @NotNull SQLConditionBuilder or(@NotNull List<@NotNull SQLConditionBuilder> conditions) {
+			return join("OR", conditions);
+		}
+
+		public static @NotNull SQLConditionBuilder or(@NotNull SQLConditionBuilder @NotNull... conditions) {
+			return or(Arrays.asList(conditions));
+		}
 	}
 }
