@@ -11,8 +11,8 @@ import java.util.Map;
 public abstract class SQLWOLOBuilder<T extends SQLWOLOBuilder<T>> extends SQLBuilder {
 	protected @Nullable SQLConditionBuilder condition;
 	protected final @NotNull Map<@NotNull String, @NotNull SortOrder> orders = CollectionsUtils.orderedMap();
-	protected int limit = 0;
-	protected int offset = -1;
+	protected int limit = -1;
+	protected int offset = 0;
 
 	@SuppressWarnings("unchecked")
 	@Contract(value = " -> this", pure = true)
@@ -52,6 +52,9 @@ public abstract class SQLWOLOBuilder<T extends SQLWOLOBuilder<T>> extends SQLBui
 	@Override
 	@Contract(value = " -> new", pure = true)
 	public @NotNull String build() {
+		if (this.limit < 0 && this.offset > 0)
+			throw new IllegalStateException("Cannot specify an OFFSET without a LIMIT value");
+
 		// Condition where select
 		String condition = this.condition == null ? "" : " WHERE " + this.condition;
 
@@ -59,10 +62,10 @@ public abstract class SQLWOLOBuilder<T extends SQLWOLOBuilder<T>> extends SQLBui
 		String orders = this.orders.isEmpty() ? "" : " ORDER BY " + CollectionsUtils.join(", ", this.orders, (column, sort) -> quoteName(column) + " " + sort.name());
 
 		// Limit select
-		String limit = this.limit > 0 ? " LIMIT " + this.limit : "";
+		String limit = this.limit >= 0 ? " LIMIT " + this.limit : "";
 
 		// Offset select
-		String offset = this.offset >= 0 ? " OFFSET " + this.offset : "";
+		String offset = this.offset > 0 ? " OFFSET " + this.offset : "";
 
 		return condition + orders + limit + offset;
 	}

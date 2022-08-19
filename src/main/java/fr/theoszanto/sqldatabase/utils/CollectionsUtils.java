@@ -79,7 +79,7 @@ public class CollectionsUtils {
 		return new OrderedMap<>();
 	}
 
-	private static class OrderedMap<K, V> extends AbstractMap<K, V> implements Map<K, V> {
+	private static class OrderedMap<K, V> extends AbstractMap<K, V> {
 		private final @NotNull EntrySet entrySet = new EntrySet();
 
 		@Override
@@ -137,9 +137,7 @@ public class CollectionsUtils {
 			public boolean equals(Object o) {
 				if (this == o) return true;
 				if (o == null || getClass() != o.getClass()) return false;
-
 				Entry<?, ?> entry = (Entry<?, ?>) o;
-
 				return Objects.equals(key, entry.key);
 			}
 

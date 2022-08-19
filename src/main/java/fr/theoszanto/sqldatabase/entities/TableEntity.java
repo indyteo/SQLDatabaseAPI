@@ -158,21 +158,25 @@ public class TableEntity implements Iterable<@NotNull ColumnEntity> {
 	}
 
 	public @NotNull SQLInsertValuesBuilder insert() {
-		return this.insert(false);
+		return this.insert(!this.getPrimaryKey().isAutoIncrement());
+	}
+
+	public @NotNull SQLInsertValuesBuilder insert(boolean includePrimary) {
+		return this.insert(includePrimary ? InsertMode.INCLUDE_PRIMARY : InsertMode.GENERATE_PRIMARY);
 	}
 
 	public @NotNull SQLInsertValuesBuilder upsert() {
-		return this.insert(true);
+		return this.insert(InsertMode.UPDATE_ON_PRIMARY_CONFLICT);
 	}
 
-	public @NotNull SQLInsertValuesBuilder insert(boolean onConflictUpdate) {
+	public @NotNull SQLInsertValuesBuilder insert(@NotNull InsertMode mode) {
 		if (this.name.isEmpty())
 			throw new IllegalStateException("Cannot insert into model binding table");
 		SQLInsertValuesBuilder builder = SQLBuilder.insertValues().into(this.name);
 		for (ColumnEntity column : this)
-			if (onConflictUpdate || !column.isPrimary())
+			if (mode != InsertMode.GENERATE_PRIMARY || !column.isPrimary())
 				builder.value(column.getName(), SQLValue.PLACEHOLDER);
-		if (onConflictUpdate)
+		if (mode == InsertMode.UPDATE_ON_PRIMARY_CONFLICT)
 			for (ColumnEntity column : this.getPrimaryKey())
 				builder.onConflict(column.getName());
 		return builder;
@@ -193,9 +197,7 @@ public class TableEntity implements Iterable<@NotNull ColumnEntity> {
 	public boolean equals(Object o) {
 		if (this == o) return true;
 		if (o == null || getClass() != o.getClass()) return false;
-
 		TableEntity that = (TableEntity) o;
-
 		return type.equals(that.type);
 	}
 
@@ -221,5 +223,11 @@ public class TableEntity implements Iterable<@NotNull ColumnEntity> {
 				|| type == BigDecimal.class)
 			return "REAL";
 		return "BLOB";
+	}
+
+	public enum InsertMode {
+		GENERATE_PRIMARY,
+		INCLUDE_PRIMARY,
+		UPDATE_ON_PRIMARY_CONFLICT
 	}
 }
