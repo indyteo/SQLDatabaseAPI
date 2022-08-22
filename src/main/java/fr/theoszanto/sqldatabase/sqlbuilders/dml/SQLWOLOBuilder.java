@@ -1,6 +1,7 @@
 package fr.theoszanto.sqldatabase.sqlbuilders.dml;
 
 import fr.theoszanto.sqldatabase.sqlbuilders.SQLBuilder;
+import fr.theoszanto.sqldatabase.sqlbuilders.SQLSortOrder;
 import fr.theoszanto.sqldatabase.utils.CollectionsUtils;
 import org.jetbrains.annotations.Contract;
 import org.jetbrains.annotations.NotNull;
@@ -10,7 +11,7 @@ import java.util.Map;
 
 public abstract class SQLWOLOBuilder<T extends SQLWOLOBuilder<T>> extends SQLBuilder {
 	protected @Nullable SQLConditionBuilder condition;
-	protected final @NotNull Map<@NotNull String, @NotNull SortOrder> orders = CollectionsUtils.orderedMap();
+	protected final @NotNull Map<@NotNull String, @NotNull SQLSortOrder> orders = CollectionsUtils.orderedMap();
 	protected int limit = -1;
 	protected int offset = 0;
 
@@ -28,11 +29,11 @@ public abstract class SQLWOLOBuilder<T extends SQLWOLOBuilder<T>> extends SQLBui
 
 	@Contract(value = "_ -> this", mutates = "this")
 	public @NotNull T order(@NotNull String column) {
-		return this.order(column, SortOrder.ASC);
+		return this.order(column, SQLSortOrder.ASC);
 	}
 
 	@Contract(value = "_, _ -> this", mutates = "this")
-	public @NotNull T order(@NotNull String column, @NotNull SortOrder sort) {
+	public @NotNull T order(@NotNull String column, @NotNull SQLSortOrder sort) {
 		this.orders.put(column, sort);
 		return this.getThis();
 	}
@@ -68,9 +69,5 @@ public abstract class SQLWOLOBuilder<T extends SQLWOLOBuilder<T>> extends SQLBui
 		String offset = this.offset > 0 ? " OFFSET " + this.offset : "";
 
 		return condition + orders + limit + offset;
-	}
-
-	public enum SortOrder {
-		ASC, DESC
 	}
 }

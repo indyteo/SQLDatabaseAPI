@@ -85,9 +85,9 @@ public class SQLCreateTableBuilder extends SQLBuilder {
 		if (this.table == null)
 			throw new IllegalStateException("Cannot create table without name. You must call .table(name) to specify the table name");
 		if (this.as == null && this.columns.isEmpty())
-			throw new IllegalStateException("Cannot create table with neither as select nor a set of columns. You must call either .as(select) or .column(name, type) to define the table");
+			throw new IllegalStateException("Cannot create table with neither as select nor a set of columns. You must call either .as(select) or .column(name[, type][, constraints...]) to define the table");
 		if (this.as != null && !this.columns.isEmpty())
-			throw new IllegalStateException("Cannot create table as select and with a set of columns. You must call either .as(select) or .column(name, type) but not both");
+			throw new IllegalStateException("Cannot create table as select and with a set of columns. You must call either .as(select) or .column(name[, type][, constraints...]) but not both");
 
 		// Temporary table
 		String temporary = this.temporary ? "TEMPORARY " : "";
@@ -99,15 +99,19 @@ public class SQLCreateTableBuilder extends SQLBuilder {
 		String definition;
 		if (this.as == null) {
 			String columns = CollectionsUtils.join(", ", this.columns);
-			String constraints = CollectionsUtils.join(", ", this.constraints);
-			definition = "(" + columns + ", " + constraints + ")";
+			if (this.constraints.isEmpty())
+				definition = "(" + columns + ")";
+			else {
+				String constraints = CollectionsUtils.join(", ", this.constraints);
+				definition = "(" + columns + ", " + constraints + ")";
+			}
 		} else
 			definition = "AS " + this.as.build();
 
 		// Table options
 		String options = CollectionsUtils.join(", ", " ", "", this.options);
 
-		return "CREATE " + temporary + "TABLE " + ifNotExists + this.table + " " + definition + options;
+		return "CREATE " + temporary + "TABLE " + ifNotExists + quoteName(this.table) + " " + definition + options;
 	}
 
 	public enum Option {

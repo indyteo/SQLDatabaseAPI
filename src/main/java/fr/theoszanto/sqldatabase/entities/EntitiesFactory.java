@@ -3,10 +3,12 @@ package fr.theoszanto.sqldatabase.entities;
 import fr.theoszanto.sqldatabase.annotations.DatabaseExclude;
 import fr.theoszanto.sqldatabase.annotations.DatabaseField;
 import fr.theoszanto.sqldatabase.annotations.DatabaseForeignKey;
+import fr.theoszanto.sqldatabase.annotations.DatabaseIndex;
 import fr.theoszanto.sqldatabase.annotations.DatabaseModelBinding;
 import fr.theoszanto.sqldatabase.annotations.DatabasePrimaryKey;
 import fr.theoszanto.sqldatabase.annotations.DatabaseTable;
 import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 
 import java.lang.reflect.Field;
 import java.lang.reflect.Modifier;
@@ -21,6 +23,7 @@ import java.util.function.Consumer;
 
 public class EntitiesFactory {
 	private static final @NotNull Map<@NotNull Class<?>, @NotNull TableEntity> tablesRegistry = new HashMap<>();
+	private static final @NotNull Map<@NotNull ColumnEntity, @NotNull IndexEntity> indexesRegistry = new HashMap<>();
 
 	private static final int IGNORED_FIELDS_MODIFIERS = Modifier.FINAL | Modifier.TRANSIENT | Modifier.STATIC | Modifier.NATIVE;
 
@@ -87,6 +90,17 @@ public class EntitiesFactory {
 		}
 		table.setPrimaryKey(new PrimaryKeyEntity(autoIncrementPrimaryKey.get(), primaryKeyColumns));
 		return table;
+	}
+
+	public static @Nullable IndexEntity index(@NotNull ColumnEntity column) {
+		if (indexesRegistry.containsKey(column))
+			return indexesRegistry.get(column);
+		DatabaseIndex databaseIndex = column.getField().getAnnotation(DatabaseIndex.class);
+		if (databaseIndex == null)
+			return null;
+		IndexEntity index = new IndexEntity(column, databaseIndex.unique());
+		indexesRegistry.put(column, index);
+		return index;
 	}
 
 	private static void forEachFields(@NotNull Class<?> type, @NotNull Consumer<@NotNull Field> action) {

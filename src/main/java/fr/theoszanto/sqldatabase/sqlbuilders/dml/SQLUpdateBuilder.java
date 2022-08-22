@@ -34,6 +34,9 @@ public class SQLUpdateBuilder extends SQLWOLOARCBuilder<SQLUpdateBuilder> {
 		if (this.columns.isEmpty())
 			throw new IllegalStateException("Cannot update no data. You must call .set(column, value) at least once to set some data");
 
+		// Update table
+		String table = quoteName(this.table);
+
 		// Set columns values
 		List<String> columns = new ArrayList<>();
 		for (Map.Entry<String, SQLValue> column : this.columns.entrySet())
@@ -43,6 +46,6 @@ public class SQLUpdateBuilder extends SQLWOLOARCBuilder<SQLUpdateBuilder> {
 		// Where Order Limit Offset
 		String wolo = super.build();
 
-		return "UPDATE " + this.table + " " + set + wolo;
+		return "UPDATE " + table + " " + set + wolo;
 	}
 }

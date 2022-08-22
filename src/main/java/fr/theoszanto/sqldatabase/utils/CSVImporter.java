@@ -101,7 +101,7 @@ public class CSVImporter {
 	public @NotNull Duration importData(@NotNull Class<?> type, @NotNull Path csv) {
 		Instant start = Instant.now();
 		if (this.createTable)
-			this.database.createTable(type);
+			this.database.createTableAndIndexes(type);
 		TableEntity table = EntitiesFactory.table(type);
 		try (Reader reader = Files.newBufferedReader(csv); CSVReader csvReader = new CSVReaderBuilder(reader).withCSVParser(this.parser).build()) {
 			String[] columns;

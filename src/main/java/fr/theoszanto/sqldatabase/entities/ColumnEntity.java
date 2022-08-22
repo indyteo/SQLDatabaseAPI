@@ -17,7 +17,7 @@ public class ColumnEntity {
 	private final @NotNull Field field;
 	private final boolean primary;
 
-	ColumnEntity(@NotNull TableEntity table, @NotNull String name, @NotNull Class<?> type, @NotNull Field field, boolean primary) {
+	/* package-private */ ColumnEntity(@NotNull TableEntity table, @NotNull String name, @NotNull Class<?> type, @NotNull Field field, boolean primary) {
 		this.table = table;
 		this.name = name;
 		this.type = type;
@@ -65,17 +65,15 @@ public class ColumnEntity {
 	public boolean equals(Object o) {
 		if (this == o) return true;
 		if (o == null || getClass() != o.getClass()) return false;
-
 		ColumnEntity column = (ColumnEntity) o;
-
-		if (!table.equals(column.table)) return false;
-		return name.equals(column.name);
+		if (!this.table.equals(column.table)) return false;
+		return this.name.equals(column.name);
 	}
 
 	@Override
 	public int hashCode() {
-		int result = table.hashCode();
-		result = 31 * result + name.hashCode();
+		int result = this.table.hashCode();
+		result = 31 * result + this.name.hashCode();
 		return result;
 	}
 }

@@ -53,25 +53,25 @@ public class SQLAlterTableBuilder extends SQLBuilder {
 	public @NotNull String build() {
 		if (this.table == null)
 			throw new IllegalStateException("Cannot alter table without name. You must call .table(name) to specify the table name");
-		if (this.invalidActions(this.renameTable, this.renameColumn, this.addColumn, this.dropColumn))
+		if (invalidActions(this.renameTable, this.renameColumn, this.addColumn, this.dropColumn))
 			throw new IllegalStateException("Cannot perform multiple (or no) actions in the same alter table statement. You must call exactly one of: .renameTable(newName), .renameColumn(column, newName), .addColumn(column, ...) or .dropColumn(column)");
 
 		String action;
 		if (this.renameTable != null)
-			action = " RENAME TO " + this.renameTable;
+			action = " RENAME TO " + quoteName(this.renameTable);
 		else if (this.renameColumn != null && this.newColumnName != null)
-			action = " RENAME COLUMN " + this.renameColumn + " TO " + this.newColumnName;
+			action = " RENAME COLUMN " + quoteName(this.renameColumn) + " TO " + quoteName(this.newColumnName);
 		else if (this.addColumn != null)
 			action = " ADD COLUMN " + this.addColumn;
 		else if (this.dropColumn != null)
-			action = " DROP COLUMN " + this.dropColumn;
+			action = " DROP COLUMN " + quoteName(this.dropColumn);
 		else
 			throw new IllegalStateException("You must choose an action to perform. It must be either .renameTable(newName), .renameColumn(column, newName), .addColumn(column, ...) or .dropColumn(column)");
 
-		return "ALTER TABLE " + this.table + action;
+		return "ALTER TABLE " + quoteName(this.table) + action;
 	}
 
-	private boolean invalidActions(@Nullable Object @NotNull... actions) {
+	private static boolean invalidActions(@Nullable Object @NotNull... actions) {
 		boolean actionFound = false;
 		for (Object action : actions) {
 			if (action != null) {

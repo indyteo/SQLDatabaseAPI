@@ -1,7 +1,9 @@
 package fr.theoszanto.sqldatabase.sqlbuilders;
 
 import fr.theoszanto.sqldatabase.sqlbuilders.ddl.SQLAlterTableBuilder;
+import fr.theoszanto.sqldatabase.sqlbuilders.ddl.SQLCreateIndexBuilder;
 import fr.theoszanto.sqldatabase.sqlbuilders.ddl.SQLCreateTableBuilder;
+import fr.theoszanto.sqldatabase.sqlbuilders.ddl.SQLDropIndexBuilder;
 import fr.theoszanto.sqldatabase.sqlbuilders.ddl.SQLDropTableBuilder;
 import fr.theoszanto.sqldatabase.sqlbuilders.dml.SQLDeleteBuilder;
 import fr.theoszanto.sqldatabase.sqlbuilders.dml.SQLInsertSelectBuilder;
@@ -73,6 +75,16 @@ public abstract class SQLBuilder {
 	@Contract(value = " -> new", pure = true)
 	public static @NotNull SQLDropTableBuilder dropTable() {
 		return new SQLDropTableBuilder();
+	}
+
+	@Contract(value = " -> new", pure = true)
+	public static @NotNull SQLCreateIndexBuilder createIndex() {
+		return new SQLCreateIndexBuilder();
+	}
+
+	@Contract(value = " -> new", pure = true)
+	public static @NotNull SQLDropIndexBuilder dropIndex() {
+		return new SQLDropIndexBuilder();
 	}
 
 	@Contract(value = " -> new", pure = true)

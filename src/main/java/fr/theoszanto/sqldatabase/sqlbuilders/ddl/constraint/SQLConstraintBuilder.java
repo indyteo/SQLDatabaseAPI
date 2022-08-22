@@ -10,7 +10,7 @@ public abstract class SQLConstraintBuilder<T extends SQLConstraintBuilder<T>> ex
 
 	@SuppressWarnings("unchecked")
 	@Contract(value = "_ -> this", mutates = "this")
-	public @NotNull T name(@NotNull String name) {
+	public @NotNull T name(@Nullable String name) {
 		this.name = name;
 		return (T) this;
 	}
@@ -18,7 +18,7 @@ public abstract class SQLConstraintBuilder<T extends SQLConstraintBuilder<T>> ex
 	@Override
 	public @NotNull String build() {
 		String constraint = this.buildConstraint();
-		return this.name == null ? constraint : "CONSTRAINT " + this.name + " " + constraint;
+		return this.name == null ? constraint : "CONSTRAINT " + quoteName(this.name) + " " + constraint;
 	}
 
 	protected abstract @NotNull String buildConstraint();

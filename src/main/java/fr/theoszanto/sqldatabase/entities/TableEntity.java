@@ -198,12 +198,12 @@ public class TableEntity implements Iterable<@NotNull ColumnEntity> {
 		if (this == o) return true;
 		if (o == null || getClass() != o.getClass()) return false;
 		TableEntity that = (TableEntity) o;
-		return type.equals(that.type);
+		return this.type.equals(that.type);
 	}
 
 	@Override
 	public int hashCode() {
-		return type.hashCode();
+		return this.type.hashCode();
 	}
 
 	private static @NotNull String getColumnSQLType(@NotNull Class<?> type) {

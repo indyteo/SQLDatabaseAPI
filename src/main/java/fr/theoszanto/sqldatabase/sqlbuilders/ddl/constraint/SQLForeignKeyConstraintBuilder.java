@@ -55,7 +55,7 @@ public class SQLForeignKeyConstraintBuilder extends SQLKeyUniqueConstraintBuilde
 		String onUpdate = this.onUpdate == null ? "" : " ON UPDATE " + this.onUpdate;
 		String onDelete = this.onDelete == null ? "" : " ON DELETE " + this.onDelete;
 
-		return super.buildConstraint() + " REFERENCES " + this.references + columns + onUpdate + onDelete;
+		return super.buildConstraint() + " REFERENCES " + quoteName(this.references) + columns + onUpdate + onDelete;
 	}
 
 	public enum KeyModifiedAction {

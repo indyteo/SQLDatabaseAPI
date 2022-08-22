@@ -3,6 +3,7 @@ package fr.theoszanto.sqldatabase;
 import fr.theoszanto.sqldatabase.entities.ColumnEntity;
 import fr.theoszanto.sqldatabase.entities.EntitiesFactory;
 import fr.theoszanto.sqldatabase.entities.ForeignKeyEntity;
+import fr.theoszanto.sqldatabase.entities.IndexEntity;
 import fr.theoszanto.sqldatabase.entities.TableEntity;
 import fr.theoszanto.sqldatabase.sqlbuilders.SQLBuilder;
 import fr.theoszanto.sqldatabase.sqlbuilders.SQLValue;
@@ -126,6 +127,44 @@ public class Database {
 	public void regenerateTable(@NotNull Class<?> type) throws DatabaseException {
 		this.dropTable(type);
 		this.createTable(type);
+	}
+
+	public void createIndexes(@NotNull Class<?> type) throws DatabaseException {
+		TableEntity table = EntitiesFactory.table(type);
+		for (ColumnEntity column : table) {
+			IndexEntity index = EntitiesFactory.index(column);
+			if (index != null)
+				this.execute(index.create().build());
+		}
+	}
+
+	public void dropIndexes(@NotNull Class<?> type) throws DatabaseException {
+		TableEntity table = EntitiesFactory.table(type);
+		for (ColumnEntity column : table) {
+			IndexEntity index = EntitiesFactory.index(column);
+			if (index != null)
+				this.execute(index.drop().build());
+		}
+	}
+
+	public void regenerateIndexes(@NotNull Class<?> type) throws DatabaseException {
+		this.dropIndexes(type);
+		this.createIndexes(type);
+	}
+
+	public void createTableAndIndexes(@NotNull Class<?> type) throws DatabaseException {
+		this.createTable(type);
+		this.createIndexes(type);
+	}
+
+	public void dropTableAndIndexes(@NotNull Class<?> type) throws DatabaseException {
+		this.dropIndexes(type);
+		this.dropTable(type);
+	}
+
+	public void regenerateTableAndIndexes(@NotNull Class<?> type) throws DatabaseException {
+		this.dropTableAndIndexes(type);
+		this.createTableAndIndexes(type);
 	}
 
 	public <T> @Nullable T get(@NotNull Class<T> type, @NotNull Object @NotNull... id) throws DatabaseException {

@@ -19,9 +19,12 @@ public class SQLDeleteBuilder extends SQLWOLOARCBuilder<SQLDeleteBuilder> {
 		if (this.table == null)
 			throw new IllegalStateException("Cannot delete data from no table. You must call .from(table) to specify table");
 
+		// Delete from table
+		String table = quoteName(this.table);
+
 		// Where Order Limit Offset
 		String wolo = super.build();
 
-		return "DELETE FROM " + quoteName(this.table) + wolo;
+		return "DELETE FROM " + table + wolo;
 	}
 }
