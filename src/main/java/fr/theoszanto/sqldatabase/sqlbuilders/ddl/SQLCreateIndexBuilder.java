@@ -85,7 +85,7 @@ public class SQLCreateIndexBuilder extends SQLBuilder {
 		String ifNotExists = this.ifNotExists ? "IF NOT EXISTS " : "";
 
 		// Indexed columns
-		String columns = CollectionsUtils.join(", ", this.columns, (column, sort) -> quoteName(column) + " " + sort.name());
+		String columns = CollectionsUtils.join(", ", "(", ")", this.columns, (column, sort) -> quoteName(column) + " " + sort.name());
 
 		// Index condition
 		String where = this.where == null ? "" : " WHERE " + this.where;
