@@ -6,11 +6,13 @@ public class ForeignKeyEntity {
 	private final @NotNull ColumnEntity column;
 	private final @NotNull ColumnEntity reference;
 	private final @NotNull TableEntity table;
+	private final boolean deepFetch;
 
-	public ForeignKeyEntity(@NotNull ColumnEntity column, @NotNull ColumnEntity reference, @NotNull TableEntity table) {
+	public ForeignKeyEntity(@NotNull ColumnEntity column, @NotNull ColumnEntity reference, @NotNull TableEntity table, boolean deepFetch) {
 		this.column = column;
 		this.table = table;
 		this.reference = reference;
+		this.deepFetch = deepFetch;
 	}
 
 	public @NotNull ColumnEntity getColumn() {
@@ -23,5 +25,9 @@ public class ForeignKeyEntity {
 
 	public @NotNull TableEntity getTable() {
 		return this.table;
+	}
+
+	public boolean isDeepFetch() {
+		return this.deepFetch;
 	}
 }

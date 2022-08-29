@@ -13,4 +13,6 @@ import java.lang.annotation.Target;
 @Target(ElementType.FIELD)
 public @interface DatabaseForeignKey {
 	@NotNull String value() default "";
+
+	@NotNull Class<?> table() default Object.class;
 }

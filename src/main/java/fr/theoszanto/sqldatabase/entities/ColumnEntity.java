@@ -4,11 +4,6 @@ import fr.theoszanto.sqldatabase.sqlbuilders.SQLValue;
 import org.jetbrains.annotations.NotNull;
 
 import java.lang.reflect.Field;
-import java.math.BigDecimal;
-import java.math.BigInteger;
-import java.sql.Date;
-import java.sql.Time;
-import java.sql.Timestamp;
 
 public class ColumnEntity {
 	private final @NotNull TableEntity table;
@@ -16,13 +11,15 @@ public class ColumnEntity {
 	private final @NotNull Class<?> type;
 	private final @NotNull Field field;
 	private final boolean primary;
+	private final boolean foreign;
 
-	/* package-private */ ColumnEntity(@NotNull TableEntity table, @NotNull String name, @NotNull Class<?> type, @NotNull Field field, boolean primary) {
+	/* package-private */ ColumnEntity(@NotNull TableEntity table, @NotNull String name, @NotNull Class<?> type, @NotNull Field field, boolean primary, boolean foreign) {
 		this.table = table;
 		this.name = name;
 		this.type = type;
 		this.field = field;
 		this.primary = primary;
+		this.foreign = foreign;
 	}
 
 	public @NotNull TableEntity getTable() {
@@ -46,15 +43,7 @@ public class ColumnEntity {
 	}
 
 	public boolean isForeign() {
-		return !this.type.isPrimitive()
-				&& this.type != void.class && this.type != Void.class
-				&& this.type != Boolean.class && this.type != Character.class
-				&& this.type != Byte.class && this.type != Short.class
-				&& this.type != Integer.class && this.type != Long.class
-				&& this.type != Float.class && this.type != Double.class
-				&& this.type != BigInteger.class && this.type != BigDecimal.class
-				&& this.type != Date.class && this.type != Time.class
-				&& this.type != Timestamp.class && this.type != String.class;
+		return this.foreign;
 	}
 
 	public @NotNull SQLValue asSQLValue() {

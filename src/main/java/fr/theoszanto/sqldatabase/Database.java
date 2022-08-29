@@ -263,7 +263,7 @@ public class Database {
 				Object obj = field.get(value);
 				if (column.isForeign()) {
 					ForeignKeyEntity foreignKey = table.getForeignKeys().get(column);
-					if (foreignKey != null) {
+					if (foreignKey != null && foreignKey.isDeepFetch()) {
 						Field foreignField = foreignKey.getReference().getField();
 						foreignField.setAccessible(true);
 						obj = foreignField.get(obj);
@@ -301,7 +301,7 @@ public class Database {
 				}
 				Class<?> fieldType = column.getType();
 				Object value;
-				if (column.isForeign())
+				if (column.isForeign() && table.getForeignKeys().get(column).isDeepFetch())
 					value = this.bind(fieldType, result, name + BIND_RECURSION_SEPARATOR);
 				else {
 					value = getResultObject(fieldType, result, name);

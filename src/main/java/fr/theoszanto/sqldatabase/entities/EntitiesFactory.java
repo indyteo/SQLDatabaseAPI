@@ -36,7 +36,7 @@ public class EntitiesFactory {
 		if (table.getColumns().containsKey(name))
 			return table.getColumns().get(name);
 		// Create column
-		return new ColumnEntity(table, name, field.getType(), field, field.isAnnotationPresent(DatabasePrimaryKey.class));
+		return new ColumnEntity(table, name, field.getType(), field, field.isAnnotationPresent(DatabasePrimaryKey.class), field.isAnnotationPresent(DatabaseForeignKey.class));
 	}
 
 	public static @NotNull TableEntity table(@NotNull Class<?> type) {
@@ -69,24 +69,33 @@ public class EntitiesFactory {
 			// Check foreign key
 			if (column.isForeign()) {
 				DatabaseForeignKey foreignKey = field.getAnnotation(DatabaseForeignKey.class);
-				if (foreignKey != null) {
-					// Retrieve referenced information
-					TableEntity referencedTable = table(column.getType());
-					String referenced = foreignKey.value();
-					if (referenced.isEmpty())
-						referenced = column.getName();
-					ColumnEntity referencedColumn = referencedTable.getColumns().get(referenced);
-					if (referencedColumn == null)
-						throw new IllegalStateException("Cannot find referenced column \"" + referenced + "\" on table " + referencedTable.getName());
-					table.getForeignKeys().put(column, new ForeignKeyEntity(column, referencedColumn, referencedTable));
-				}
+				// Retrieve referenced information
+				Class<?> referencedType = foreignKey.table();
+				if (referencedType == Object.class)
+					referencedType = column.getType();
+				if (!referencedType.isAnnotationPresent(DatabaseTable.class))
+					throw new IllegalStateException("Missing or invalid referenced table type for foreign key on column \"" + column.getName() + "\": @DatabaseTable annotation not found on type " + referencedType);
+				TableEntity referencedTable = table(referencedType);
+				String referenced = foreignKey.value();
+				if (referenced.isEmpty())
+					referenced = column.getName();
+				ColumnEntity referencedColumn = referencedTable.getColumns().get(referenced);
+				if (referencedColumn == null)
+					throw new IllegalStateException("Cannot find referenced column \"" + referenced + "\" on table " + referencedTable.getName());
+				// Check if column type is referenced table type
+				boolean deep = column.getType() == referencedTable.getType();
+				// Or at least referenced column type
+				if (!deep && incompatibleTypes(column.getType(), referencedColumn.getType()))
+					throw new IllegalStateException("Type mismatch in foreign key on column \"" + column.getName() + "\": " + column.getType() + " != " + referencedColumn.getType());
+				table.getForeignKeys().put(column, new ForeignKeyEntity(column, referencedColumn, referencedTable, deep));
 			}
 		});
 		if (autoIncrementPrimaryKey.get()) {
 			if (primaryKeyColumns.size() != 1)
 				throw new IllegalStateException("Cannot create multi-column auto-increment primary key: " + tableName);
-			if (invalidAutoIncrementType(primaryKeyColumns.get(0).getType()))
-				throw new IllegalStateException();
+			Class<?> primaryKeyType = primaryKeyColumns.get(0).getType();
+			if (invalidAutoIncrementType(primaryKeyType))
+				throw new IllegalStateException("Invalid column type for auto-increment primary key: " + primaryKeyType);
 		}
 		table.setPrimaryKey(new PrimaryKeyEntity(autoIncrementPrimaryKey.get(), primaryKeyColumns));
 		return table;
@@ -118,5 +127,34 @@ public class EntitiesFactory {
 				&& type != int.class && type != Integer.class
 				&& type != long.class && type != Long.class
 				&& type != BigInteger.class && type != BigDecimal.class;
+	}
+
+	private static boolean incompatibleTypes(@NotNull Class<?> a, @NotNull Class<?> b) {
+		if (a.isPrimitive() == b.isPrimitive())
+			return a != b;
+		if (b.isPrimitive()) {
+			Class<?> c = a;
+			a = b;
+			b = c;
+		}
+		if (a == boolean.class)
+			return b != Boolean.class;
+		if (a == char.class)
+			return b != Character.class;
+		if (a == byte.class)
+			return b != Byte.class;
+		if (a == short.class)
+			return b != Short.class;
+		if (a == int.class)
+			return b != Integer.class;
+		if (a == long.class)
+			return b != Long.class;
+		if (a == float.class)
+			return b != Float.class;
+		if (a == double.class)
+			return b != Double.class;
+		if (a == void.class)
+			return b != Void.class;
+		return true;
 	}
 }
