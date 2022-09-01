@@ -17,7 +17,10 @@ import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
 import java.io.IOException;
+import java.io.InputStream;
+import java.io.InputStreamReader;
 import java.io.Reader;
+import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.time.Duration;
@@ -98,12 +101,24 @@ public class CSVImporter {
 		return this;
 	}
 
+	public @NotNull Duration importData(@NotNull Class<?> type, @NotNull InputStream csv) {
+		return this.importData(type, new InputStreamReader(csv, StandardCharsets.UTF_8));
+	}
+
 	public @NotNull Duration importData(@NotNull Class<?> type, @NotNull Path csv) {
+		try {
+			return this.importData(type, Files.newBufferedReader(csv));
+		} catch (IOException e) {
+			throw new DatabaseException("Unable to open CSV file", e);
+		}
+	}
+
+	public @NotNull Duration importData(@NotNull Class<?> type, @NotNull Reader csv) {
 		Instant start = Instant.now();
 		if (this.createTable)
 			this.database.createTableAndIndexes(type);
 		TableEntity table = EntitiesFactory.table(type);
-		try (Reader reader = Files.newBufferedReader(csv); CSVReader csvReader = new CSVReaderBuilder(reader).withCSVParser(this.parser).build()) {
+		try (CSVReader csvReader = new CSVReaderBuilder(csv).withCSVParser(this.parser).build()) {
 			String[] columns;
 			Iterator<String[]> iterator = csvReader.iterator();
 			if (this.columnsFromCSV) {
